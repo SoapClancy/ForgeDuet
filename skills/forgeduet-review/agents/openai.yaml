@@ -1,0 +1,4 @@
+interface:
+  display_name: "ForgeDuet Review"
+  short_description: "Review exact commits with independent tests and evidence"
+  default_prompt: "Use $forgeduet-review to independently review and test a ForgeDuet candidate commit."

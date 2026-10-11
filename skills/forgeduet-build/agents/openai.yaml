@@ -1,0 +1,4 @@
+interface:
+  display_name: "ForgeDuet Build"
+  short_description: "Implement changes with tests and auditable handoffs"
+  default_prompt: "Use $forgeduet-build to implement an authorized change and hand a tested commit to an independent reviewer."

@@ -1,0 +1,48 @@
+{
+  "schema_version": 2,
+  "report_language": null,
+  "project_root": "/absolute/path/to/project",
+  "rules_file": "docs/forgeduet/PROJECT_RULES.md",
+  "mailbox": "/absolute/path/to/project/.forgeduet",
+  "setup_confirmed": false,
+  "authorization_source": "Replace with actual human instruction reference",
+  "permissions": {
+    "confirmed": false,
+    "read_roots": [],
+    "write_roots": [],
+    "execution": [],
+    "network": "Specify granted / restricted / none"
+  },
+  "budgets": {
+    "confirmed": false,
+    "tokens": null,
+    "usd": null,
+    "wall_seconds": null,
+    "max_rounds": null,
+    "max_stall_reviews": null
+  },
+  "lease_seconds": 120,
+  "poll_seconds": 60,
+  "roles": {
+    "build": {
+      "provider": null,
+      "model": null,
+      "effort": null,
+      "verification": "unavailable",
+      "verification_source": "Record how settings were checked, self-reported, or unavailable",
+      "workdir": "/absolute/path/to/build/checkout",
+      "skill_file": "/absolute/path/to/forgeduet-build/SKILL.md",
+      "adapter_argv": []
+    },
+    "review": {
+      "provider": null,
+      "model": null,
+      "effort": null,
+      "verification": "unavailable",
+      "verification_source": "Record how settings were checked, self-reported, or unavailable",
+      "workdir": "/absolute/path/to/review/worktree",
+      "skill_file": "/absolute/path/to/forgeduet-review/SKILL.md",
+      "adapter_argv": []
+    }
+  }
+}

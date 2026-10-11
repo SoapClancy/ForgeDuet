@@ -1,0 +1,19 @@
+{
+  "kind": "candidate",
+  "sha": "REPLACE_WITH_FULL_COMMIT_SHA",
+  "report": "docs/forgeduet/deliveries/run-001-round-01.md",
+  "summary": "A concise completed-work handoff; details in the report.",
+  "execution": {
+    "provider": "EXPLICIT_USER_CHOICE",
+    "model": "EXPLICIT_USER_CHOICE",
+    "effort": "EXPLICIT_USER_CHOICE",
+    "verification": "unavailable"
+  },
+  "usage": {
+    "tokens": null,
+    "usd": null,
+    "source": "Unknown until provided by the client; do not estimate"
+  },
+  "required_gates_passed": false,
+  "blocking_issue_ids": []
+}

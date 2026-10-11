@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.forgeduet/
+.lock/
+.runtime/
+run.local.json
+evidence/raw/
+artifacts/private/
+*.zip
+*.tar.gz
+Claude反馈/
