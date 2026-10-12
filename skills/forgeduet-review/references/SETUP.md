@@ -26,8 +26,9 @@ Complete before starting the loop. Ask missing questions together, early. Existi
 | Test tiers and required human/device gates | |
 | P3 deferral policy | |
 | Active run or preparation only (do not start monitors during preparation) | |
-| Both monitors: native scheduler / background completion / reviewed CLI relay; explicit manual fallback if unavailable | |
-| Each role's actual task ID/PID, wakeup evidence, private cursor and handled baseline | |
+| Both local detectors (no idle model calls) and wakeup bridges: verified background completion / reviewed CLI relay | |
+| If unavailable: specific limitation and explicitly chosen fallback; consent for recurring AI-timer usage if selected | |
+| Each role's actual ID/PID, idle-no-model evidence, real client wakeup evidence, private cursor and acknowledged hashes | |
 | Poll interval (default 60 seconds), idle usage and client/sleep limitations | |
 | Shared coordination .lock/ root, unique owners, append-only updates.log and records writer | |
 | Stop conditions and authorized restart procedure | |
@@ -39,6 +40,6 @@ Record each grant's source (human message/date or prior standing instructions). 
 
 For automation, record the reviewed adapter path and argv, and then fill `run.example.json`. The boolean confirmations in that JSON are workflow declarations, not proof of consent and not OS access controls. The agent must have real human authorization for the recorded choices.
 
-An active local paired run defaults to automatic two-way handoff. Follow `AUTO_HANDOFF.md` to arm and verify **both** sides without a human courier. If a real wakeup mechanism is unavailable, disclose it early and agree a fallback; never silently downgrade to manual. Skill editing/installation is preparation, not a request to start monitoring another project.
+An active local paired run defaults to automatic two-way handoff. Follow `AUTO_HANDOFF.md` to arm and verify **both** sides without a human courier. Use local checks before model calls, without a basic-model triage on every scan. Preserve the selected substantive models/strengths. If a real event-to-model bridge is unavailable, disclose it early and agree a fallback; never silently enable recurring AI turns or downgrade to manual. Skill editing/installation is preparation, not a request to start monitoring another project.
 
 Choose the workspace layout before grants: coordination records, build source, and review source have different owners. See `protocol/WORKSPACES.md` in the package, or `references/WORKSPACES.md` in an installed skill. Commit durable Markdown and synthetic regressions through the designated records/product writer; do not let both roles stage the same checkout concurrently. With safe-mode Claude examples, explicitly supply approved build conventions in the pinned rules; automatic `CLAUDE.md` discovery is disabled.

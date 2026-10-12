@@ -1,6 +1,34 @@
 # Validation
 
-## Current validation — 2026-10-11, v0.3.1
+## Current validation — 2026-10-12, v0.3.2 instruction update
+
+- Author: ChatGPT, ForgeDuet skill maintainer; settings not independently attested.
+- Recorded: 2026-10-12T07:41:52+01:00.
+- Scope: make local checks **before** model invocation the default for both roles. No basic or advanced model is needed for idle hash/completion/ack checks. Periodic AI wakeups are now an explicitly chosen, cost-disclosed fallback, not an equivalent default.
+- This changes both SKILL entrypoints, canonical handoff/setup guides, bilingual start instructions and bundled references. It does **not** change Python runtime/tests, cursor schemas, model settings, or restart any project monitor. Runtime behavior was already local; the earlier native-timer choice caused the model to wake before the local check.
+
+| Check | Observed result | Scope |
+| --- | --- | --- |
+| Full existing package suite | **95/95 passed, 22.296 seconds** | Synthetic temporary mailboxes/workers; no real provider invocation |
+| Idle detector/dispatch regressions in that suite | Passed | Persistent Markdown watcher remains waiting until delivery; relay starts no idle worker; two live role pollers dispatch only when work arrives |
+| Crash/ack and completion regressions | Passed | Process exit does not consume input; exact-hash acknowledgement survives restart; mutations surface; unmarked notices are separate from deliveries |
+| Source bundle equality and both source skill validators | Passed | Instructions/resources synchronized; not actual client-wakeup proof |
+| Four installed packages | **108 files compared; 28 instruction/reference files updated; all matched source** | Codex and Claude build/review copies; existing copies matched the pre-edit source, unknown extra files preserved; all four validators passed |
+| Relative Markdown targets and whitespace | Passed | Public guides/templates/bundles and Git diff checks |
+| WristFiles pause | Read-only verified | Native heartbeat PAUSED; review cursor paused, no watcher, 7 handled reports and 2 handled warnings retained |
+
+The existing tests `test_background_process_is_quiet_then_exits_on_delivery`, `test_idle_watch_does_not_start_worker`, `test_two_live_pollers_wake_on_new_work_and_exit_when_done` and `test_exit_does_not_consume_and_hash_bound_ack_survives_restart` exercise the relevant local behavior. Their fixture workers are not real model calls. No new runtime tests were needed for this instruction-only change; no assertion was weakened. Raw test output is retained privately/ignored at `evidence/raw/v032/full-suite.log`.
+
+Unchanged runtime hashes:
+
+| File | SHA-256 |
+| --- | --- |
+| `scripts/handoff.py` | `9fe5a0fa7b70bfca8e88b1bb1dda446eaf02b6c01c9e976eb8aa6ebedc675e6c` |
+| `scripts/relay.py` | `b519024f736e4eef2dc9b5892b74bdd2066e6ece700e629a36d3c17bad43fd4f` |
+
+**Remaining integration limit:** this update does not establish a zero-idle-model loop in the current Codex desktop chat. Its available shell tool exposes a session to poll; no automatic process-exit-to-chat wakeup was verified. A real client background-completion bridge or reviewed CLI setup still needs an authorized live smoke test. The package does not provide a generic desktop-chat wakeup API; the example real-provider adapters remain untested. A previous Claude-reported background notification is not independent proof for Codex or every client session. Skill installation does not hot-reload another agent's already-read instructions or restart its watcher. Both configured substantive models are preserved; no basic model was added to polling, no CLI installed, no paid provider invoked, and no product code or project coordination file written. This instruction update has not yet received independent peer review.
+
+## Historical validation — 2026-10-11, v0.3.1
 
 - Author: ChatGPT, ForgeDuet skill maintainer; user-configured settings, not independently attested.
 - Recorded: 2026-10-11T21:00:11+01:00.

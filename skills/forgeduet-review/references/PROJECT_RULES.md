@@ -44,8 +44,10 @@ Status: awaiting human configuration. Do not treat this template as authority.
 
 - Active run authorization (skill preparation alone does not start a monitor):
 - Build monitors reviews/; review monitors deliveries/; interval defaults to 60 seconds:
-- Real wakeup mechanism and actual ID/PID/verification for each role:
-- Role-private cursors / handled baseline / watcher status records:
+- Local detector before model invocation; no model, including a basic one, for idle checks:
+- Verified event-to-model bridge and actual ID/PID/idle and wakeup evidence for each role:
+- Missing bridge / explicitly chosen fallback; recurring AI-timer cost consent if applicable:
+- Role-private cursors / acknowledged report path+hash baseline / watcher status records; never consume at detection:
 - Idle model usage and runtime/sleep limits; unavailable measurements:
 - Shared coordination .lock/ root and unique owner IDs; updates.log writer:
 - Atomic completed reports; immutable records corrected by supersession:

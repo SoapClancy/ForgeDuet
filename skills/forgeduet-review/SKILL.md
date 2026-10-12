@@ -9,7 +9,7 @@ You own technical review and independent evidence. Check source and observable b
 
 ## Enter or resume
 
-First establish the authorized task and version. **For a user-started local paired run, automatic two-way handoff is required by default.** Read [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md), arm/verify an actually supported wakeup mechanism on `deliveries/` at a default **60-second interval**, and record its task ID or process, cursor and resume procedure. Do not wait for the human to forward the builder's report. Editing/installing this skill alone does not start a project or authorize a monitor; “prepare only” means do not arm one.
+Establish the authorized task and version. **A user-started local paired run defaults to automatic handoff with zero model calls while idle.** Read [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md). Monitor `deliveries/` with local byte/SHA-256, completion-marker and acknowledgement checks, default **60 seconds**; no basic or advanced model is needed for these checks. Use verified client background completion or a reviewed, configured CLI relay to wake the selected work model only for pending input or actionable transport diagnostics. Record the actual detector/wakeup IDs, evidence, cursor and resume procedure. Do not substitute an AI timer that wakes before checking files unless the human explicitly chooses that recurring-cost fallback. If no bridge is verified, explain the missing capability instead of claiming automation. Editing/installing skills alone never starts or resumes a project monitor; preserve “prepare only” and user pauses.
 
 Read the human-authorized task, project rules, setup choices, candidate delivery, and current issue records. Read [the shared protocol](references/PROTOCOL.md) on first use. For an unconfigured run, use [SETUP.md](references/SETUP.md) and [PROJECT_RULES.md](references/PROJECT_RULES.md).
 
@@ -38,7 +38,9 @@ Say “no mismatch observed in this probe,” not “race impossible.” Disting
 
 ## Communication
 
-Use automatic local file handoff during an active paired run. Select native client scheduling, a background watcher whose completion actually resumes this client, or reviewed CLI dispatch. A running Python poller alone is not AI wakeup. Local checks make no model calls while unchanged; native AI wakeups can consume usage. Record observed/unknown usage honestly. Verify your own armed mechanism; do not claim the other side is monitoring without evidence.
+Keep idle checks in local code, before model invocation. A persistent `handoff.py watch` emits pending paths/hashes; its exit must demonstrably resume the intended client, or use the configured relay. A terminal that must be polled by the agent is not an autonomous wakeup bridge. Native AI heartbeats can consume usage even with no update; they are an explicit fallback, not the default. Preserve the chosen build/review model and strength. Report measured/unknown usage honestly, and do not infer the peer monitor is alive.
+
+Compare each peer report to its last durably **acknowledged** hash, not merely its last scan. Changed bytes are not task completion: validate completion, scope, full SHA and evidence. Never auto-ack at detection/wakeup, watch your own output or use changes to `updates.log` as a work trigger. See [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md) for the event rules.
 
 Use [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md) and bundled `scripts/handoff.py` for local publication/lock/polling. Take the shared `.lock/` before shared report/test writes; append `updates.log` and release promptly. Do not break others' locks, hold locks while testing/thinking/waiting, or gain Git rights from report authorship. With configured CLI dispatch use [TRANSPORT.md](references/TRANSPORT.md) instead of a second dispatcher; the example [CLI adapters](references/ADAPTERS.md) are not real-provider tested.
 
