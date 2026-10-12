@@ -5,6 +5,8 @@ description: Implement and test changes as the ForgeDuet builder or build role, 
 
 # ForgeDuet — build and test
 
+Workflow instructions v0.3.2; relay runtime 0.3.0, unchanged. These are separate version tracks.
+
 You own implementation and self-tests. A separate reviewer reads the exact commit and verifies independently. Deliver a concrete tested change; agreement alone is not an acceptance gate.
 
 ## Enter or resume
@@ -47,3 +49,15 @@ For local Markdown locking, publication and polling use [AUTO_HANDOFF.md](refere
 Inspect watcher JSON, not just its exit: `attention/unmarked_record` requests transport repair, not code review; durably handle it before separate `ack-warning`. A warning never acknowledges the delivery. One failed scan retries locally; persistent errors retain diagnostics and stop rather than pretend to finish. Both roles use the same reviewed helper, never an old token-unaware unlock tool.
 
 Own build reports, product changes, and adopted tests. Read counterpart reports/tests; correct originals with a superseding record. Stop and record why on same-SHA closure, a required human decision, exhausted agreed budget, or user stop. Re-arm after the human resumes or authorizes a new task; never close a newly reopened monitor because an old task already finished. Browser/upload or human-courier handoff is an explicit fallback, not the silent default. If automatic wakeup is unavailable, say so during setup and resolve it with the human; do not label a sleeping loop automatic. See [MANUAL.md](references/MANUAL.md).
+
+## Candidate Markdown CLI bridge — prepare only
+
+See [MARKDOWN_BRIDGE.md](references/MARKDOWN_BRIDGE.md) and [REVIEW_STATE.md](references/REVIEW_STATE.md) for the step-1 reviewer bridge and compact source-cited context. It is fake-CLI tested only, separate from relay runtime 0.3.0. Do not install/start it on a project or invoke a real model without the separately authorized provider smoke test; preserve existing pauses. The bridge publishes under the shared lock before exact-hash acknowledgement; unresolved calls require human reconciliation instead of automatic paid retries. This paragraph adds no project, model, filesystem or spending authority.
+
+Bridge `transport_notice` / `bridge_stopped` records are transport gates, never product findings or approval. Durably handle and acknowledge only that notice on the receiving role cursor; preserve the original delivery, model choice and pause/recovery gates. See the candidate bridge reference for stop alerts, positive watchdog and state-before-delivery freeze order. Generating notices is model-free; a peer model wake to read one is not.
+
+## Candidate existing-chat queue adapter — prepare only
+
+For a human-authorized existing Codex **review** chat, see [QUEUE_BRIDGE.md](references/QUEUE_BRIDGE.md) and [queue.example.json](references/queue.example.json). Queue adapter 0.1 has fake-CLI tests; the underlying CLI has one idle-chat real smoke, not busy/archive/sleep/reboot validation. This is a separate candidate, not relay runtime or project activation. Preserve paused projects, selected model/effort and explicit real-test gates. Claude's own verified background watcher remains separate.
+
+When this adapter is actually configured, its local process stays armed while the review chat handles one input; **verify it instead of starting a second watcher or AI heartbeat**. Queue success is not processing. Reviewer publishes a complete bound report with the three event identity lines specified in the reference, logs under the writer lock, then personally exact-hash acknowledges input. The adapter never acknowledges it; uncertain dispatch/deadline stops notify without automatic resend or exec fallback. Transport notices are not review verdicts. Installation alone does not enable this route.

@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "cli": "/REPLACE/trusted/codex",
+  "thread": "REPLACE_WITH_AUTHORIZED_EXISTING_REVIEW_CHAT_UUID",
+  "model": "REPLACE_WITH_EXPLICIT_USER_CHOICE",
+  "effort": "REPLACE_WITH_EXPLICIT_USER_CHOICE",
+  "owner": "review / REPLACE_MODEL / REPLACE_SESSION",
+  "project_dir": "/REPLACE/project",
+  "control_dir": "/REPLACE/trusted-queue-control",
+  "runtime_dir": "/REPLACE/private-queue-runtime",
+  "cursor": "/REPLACE/project/handoff/.runtime/review.json",
+  "instructions": "/REPLACE/trusted/forgeduet-review/SKILL.md",
+  "interval": 60,
+  "queue_timeout_seconds": 30,
+  "ack_timeout_seconds": 3600,
+  "desktop_notifications": true
+}

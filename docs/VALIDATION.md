@@ -1,6 +1,19 @@
 # Validation
 
-## Current validation — 2026-10-12, v0.3.2 instruction update
+## Current follow-up — 2026-10-12, v0.3.2 independent review
+
+- Author: ChatGPT, ForgeDuet skill maintainer; recorded 2026-10-12T08:22:34+01:00.
+- Claude reviewed `d2321e1f983531e4e20ed19d2a97b1f85a35ebee` and reported **95/95 passed, 22.3 seconds**, no P1/P2 and matching installed Claude copies. Its unchanged feedback SHA-256 is `a9f01f2d97146da6954d2f9f57fd0a45c74be4ed7c39ee44414e2e76f017572e`. Accepted within that scope; this documentation follow-up has not had another independent review.
+- Its disposable Claude Code probe reported about eight idle scans, then actual background-completion notification, with no automatic acknowledgement. Report-to-detection was 7 seconds, detection-to-wakeup 5 seconds: **12 seconds total**, not within the 10-second scan interval. Some waiting overlapped its active reply. This is reviewer-reported evidence for that client/session, not Codex or sleep/restart proof.
+- Workflow instructions are explicitly v0.3.2; relay runtime stays 0.3.0. Timer fallback now specifies first-operation local scanning, immediate quiet exit when unchanged, human-selected cadence and authorized compact context. Setup assigns installed-copy synchronization ownership. No Python, tests, schema or model settings changed.
+- Local Codex preflight found the existing bundled executable `/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex`, version `0.162.0-alpha.17.2`. Help exposes non-interactive exec and App Server controls. The documented daemon version probe failed because its default control socket was absent. No daemon was started or model turn invoked; availability/help is not an integration pass. [Hook lifecycle](https://learn.chatgpt.com/docs/hooks) does not wake idle turns; [App Server](https://learn.chatgpt.com/docs/app-server) and [CLI](https://learn.chatgpt.com/docs/non-interactive-mode) are documented routes with gates explained in [ADAPTERS](../protocol/ADAPTERS.md).
+- Checks passed: source bundles; six source/installed skill validators; 164 relative Markdown targets; four installed copies byte-matching source; unchanged runtime hashes below; Git whitespace check. Existing behavior tests were not rerun for documentation alone; creator 95/95 and independent 95/95 remain separately scoped evidence.
+
+The synchronizer was ChatGPT. Human authorization is the user's request to update ForgeDuet's polling instructions and latest continuation; a current-turn system grant covered the repository and all four installed roots. Exact destinations: `/Users/soapclancy/.codex/skills/forgeduet-build`, `/Users/soapclancy/.codex/skills/forgeduet-review`, `/Users/soapclancy/.claude/skills/forgeduet-build`, `/Users/soapclancy/.claude/skills/forgeduet-review`. The previous 28 updates were seven relative files per root: `SKILL.md` and `references/{AUTO_HANDOFF,MANUAL,PROJECT_RULES,PROTOCOL,SETUP,WATCHER}.md`. This follow-up compared 108 package files and wrote 20: per root, `SKILL.md` plus `references/{ADAPTERS,AUTO_HANDOFF,SETUP,WATCHER}.md`. Existing bytes matched the reviewed source before copying; extras were preserved. Exact paths, before/after hashes, author, grant source and synchronization time are retained privately in `evidence/raw/v032/installed-followup.json`.
+
+**Still unverified:** a real Codex provider invocation, permission/config isolation, actual event-to-model dispatch/restart, and a complete two-client loop. Typed relay does not consume the Markdown watcher's reports without a separately reviewed bridge or explicit workflow migration. No WristFiles operation, monitor resume, extra CLI/model session, commit or push occurred. This chat itself still uses model resources; its cumulative token/cost is unavailable. See the [follow-up record](deliveries/2026-10-12-v032-review-followup.md).
+
+## Original validation snapshot — 2026-10-12, v0.3.2 instruction update
 
 - Author: ChatGPT, ForgeDuet skill maintainer; settings not independently attested.
 - Recorded: 2026-10-12T07:41:52+01:00.
@@ -26,7 +39,7 @@ Unchanged runtime hashes:
 | `scripts/handoff.py` | `9fe5a0fa7b70bfca8e88b1bb1dda446eaf02b6c01c9e976eb8aa6ebedc675e6c` |
 | `scripts/relay.py` | `b519024f736e4eef2dc9b5892b74bdd2066e6ece700e629a36d3c17bad43fd4f` |
 
-**Remaining integration limit:** this update does not establish a zero-idle-model loop in the current Codex desktop chat. Its available shell tool exposes a session to poll; no automatic process-exit-to-chat wakeup was verified. A real client background-completion bridge or reviewed CLI setup still needs an authorized live smoke test. The package does not provide a generic desktop-chat wakeup API; the example real-provider adapters remain untested. A previous Claude-reported background notification is not independent proof for Codex or every client session. Skill installation does not hot-reload another agent's already-read instructions or restart its watcher. Both configured substantive models are preserved; no basic model was added to polling, no CLI installed, no paid provider invoked, and no product code or project coordination file written. This instruction update has not yet received independent peer review.
+**Remaining integration limit at this snapshot:** this update does not establish a zero-idle-model loop in the current Codex desktop chat. Its available shell tool exposes a session to poll; no automatic process-exit-to-chat wakeup was verified. A real client background-completion bridge or reviewed CLI setup still needs an authorized live smoke test. The package does not provide a generic desktop-chat wakeup API; the example real-provider adapters remain untested. A previous Claude-reported background notification is not independent proof for Codex or every client session. Skill installation does not hot-reload another agent's already-read instructions or restart its watcher. Both configured substantive models are preserved; no basic model was added to polling, no CLI installed, no paid provider invoked, and no product code or project coordination file written. Independent review was pending then; its later result is recorded above.
 
 ## Historical validation — 2026-10-11, v0.3.1
 
@@ -217,3 +230,44 @@ Tests are authored and run by the creating agent. No independent second-model re
 The checked-in tests and fixture adapter reproduce these checks without network or paid models. The source SHA-256 is recorded below because the user requested an output folder without Git initialization. This record covers the canonical relay; bundle equality is checked separately.
 
 Canonical `scripts/relay.py` SHA-256: `2f3a54fd421e0c4a3378521bd5f8a434675a843c7818ec4505038d51a44900e4`
+
+
+## 2026-10-12 — Markdown CLI reviewer bridge, step 1 candidate
+
+Author: ChatGPT / ForgeDuet step-1 build
+Recorded: 2026-10-12T19:50:54+01:00
+
+- Added generic source-cited `templates/REVIEW_STATE.md`, explicit placeholder config, and separate `scripts/markdown_bridge.py` reviewer runtime.
+- Focused bridge suite: 21/21 passed (3.397 s); complete synthetic suite: 116/116 passed (25.530 s). Commands: `python3 -m unittest discover -s tests -p test_markdown_bridge.py -v` and `python3 -m unittest discover -s tests -v`.
+- Real local fake-CLI processes verified idle zero invocation, one dispatch on complete input, dedup/restart, incomplete warnings, mutated-input identity, successful publication/log before ack, missing usage, failure/pause/recovery, timeout, active-child cancellation and cross-process lock exclusion. Publication/log and ack crash gaps retain the report and block automatic paid retries.
+- `handoff.py` and `relay.py` unchanged; source bundles synchronized separately. No extra real model calls, installed-skill update, project monitoring, WristFiles access/export, device action or repository commit/push.
+- Transport tests are not evidence of real-provider auth/model availability, actual usage fields, desktop sidebar behavior, review quality or comparative token cost. A separately authorized tiny real smoke test is still required.
+- Raw logs and immutable source snapshot/manifest: `evidence/raw/2026-10-12-markdown-bridge-step1/`; exact hashes are in this step's delivery record. Existing earlier uncommitted documentation retained.
+
+
+## 2026-10-12 — Bridge step-1 review follow-up (candidate 0.2)
+
+Author: ChatGPT / ForgeDuet bridge follow-up
+Recorded: 2026-10-12T20:10:36+01:00
+
+- Addresses Claude's FD-BR-001: owning bridge publishes typed transport-only stop notice, with exact-hash dedup, durable receipt, peer build-watcher discovery and best-effort local OS fallback. No delivery is acknowledged by the notice and no model is invoked to generate it.
+- Positive finite CLI watchdog is now required; placeholder config uses 3600 seconds, not a project budget change. Source state must be prepared before delivery, frozen through the active review, then updated from its durable result. Later real smoke must execute a synthetic test command and retain sandbox/usage evidence; still not authorized or run.
+- Original errors survive pause/cleanup/notification failures. Review filenames now have date prefixes. Rejected concurrent launchers do not falsely announce the running owner stopped.
+- Focused bridge suite: 35/35 passed (4.445 s). Full synthetic suite: 130/130 passed (26.428 s). OS notifications stubbed; no actual provider call or OS banner claimed.
+- FD-BR-001 unfixed/fixed control uses the same fake CLI failure against the prior fixed archive versus this candidate: old emits 0 peer notices, fixed emits 1; both retain pending input and call only the fake CLI once.
+- Original 21 bridge tests retain assertions; only fixture config now uses a positive timeout/disabled desktop notifications, and review-file counts match dated substantive run files instead of counting the new distinct transport notices. 14 new regressions added; original handoff/relay test assertions untouched.
+- Fixed source snapshot, manifest, raw logs and negative-control harness are in `evidence/raw/2026-10-12-markdown-bridge-step1-followup/`; hashes are in the immutable follow-up delivery.
+- No installed-skill rollout, daemon/project monitor, WristFiles access/export, real device action, real model invocation, repository commit or push. Both prior delivery and peer feedback remain immutable. Notification receipt/stderr cannot guarantee delivery when all channels fail or the process is killed before cleanup; this limitation is documented.
+
+Queue adapter 0.1 candidate validation uses `python3 -m unittest discover -s tests -p test_queue_bridge.py -v`, with a local `tests/fixture_queue.py` executable only. It tests idle no-call, durable dispatch dedup, hard-kill recovery, bound review+reviewer ack, errors/notices/pause. Fake responses are not real queue/App/capacity/sleep evidence. Underlying CLI smoke is in `docs/deliveries/2026-10-12-queue-sandbox-smoke.md`; no new provider call or project activation is authorized by these tests.
+
+
+## 2026-10-12 — User-authorized latest skill installation
+
+Author: ChatGPT. User explicitly requested installing the latest local skills, committing local updates to a feature branch and pushing it, then resetting local main to origin/main.
+
+- Updated all four personal role installations (Codex and Claude build/review): 136 package files compared, 44 updated; every package file now matches source bytes and modes. No extra installed files were present. Existing copies and the complete pre-install workspace/Git history were backed up outside the repository before overwriting.
+- Both source bundles synchronized; six source/installed skill validators passed. Full local synthetic suite: 167/167 passed in 30.658 seconds. No new real model/provider call, device action or project monitor.
+- Queue adapter remains candidate 0.1: one idle synthetic workspace write/ack smoke and independent peer review passed; busy/archived chats, sleep/reboot, semantic review quality and other project paths remain outside that evidence. Installation does not enable a project. Adoption notes now reflect the completed limited smoke; runtime scripts were not changed in this installation step.
+- Exact installation destinations, before/after hashes, author, timestamp and authorization are retained in ignored `evidence/raw/2026-10-12-installed-latest/installation.json`; all 136 installed paths are listed in `installed-manifest.json`. Its SHA-256 is `6a4cbe5fe237ed572243b6ced1b6616fc94e1339bc2f538c09757c25d6a78fa1`. Full test output is beside it.
+- Private raw evidence and peer feedback remain local under existing ignore rules and are included in the external backup. Public source, tests, documentation and delivery records are prepared for the authorized feature branch; this record is written before Git publication and does not itself claim a successful push.

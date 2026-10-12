@@ -2,7 +2,17 @@
 
 For native-client automatic file handoff see [AUTO_HANDOFF.md](AUTO_HANDOFF.md); the CLI relay is an alternative, not a prerequisite. These optional bridges to `codex exec` and `claude -p` have been exercised with synthetic CLIs, not real model calls, authentication or client sandbox enforcement. Current installed Codex `exec --help` was checked; that is not an integration test.
 
-Install/login to your chosen CLI yourself. Select supported full model IDs and effort, establish actual OS/client grants, and inspect the frozen `adapter_argv`. The examples use fresh invocations, structured results and private raw output; they never install clients or bypass permissions. Unsupported flags stop the run; do not remove isolation flags to make an older client run.
+Check for an authorized CLI, including a client-bundled executable outside `PATH`; failed `command -v` alone does not prove absence. Use its absolute path and inspect version/help; bundled paths can change with client updates. If installation/login is needed, the human handles it. Never read/print credential files. Select supported full model IDs and effort, establish actual OS/client grants, and inspect the frozen `adapter_argv`. The examples use fresh invocations, structured results and private raw output; they never install clients or bypass permissions. Unsupported flags stop the run; do not remove isolation flags to make an older client run.
+
+## Codex event-to-model routes
+
+The hash detector needs no model; dispatch is a separate capability. Codex background hooks do not start an idle turn: their output waits for the next user turn. Shell process exit alone is not proof of wakeup. [Official hook lifecycle](https://learn.chatgpt.com/docs/hooks).
+
+The public App Server protocol has `turn/start` and local transports, but this does not prove the current desktop chat is reachable through that endpoint. App Server is experimental and unsupported for production. A missing default control socket means that endpoint is unavailable, not that every Codex route is impossible. Verify endpoint, target identity, authorization and concurrency before invoking a turn; do not substitute private IPC or UI typing. [Official App Server](https://learn.chatgpt.com/docs/app-server).
+
+`codex exec` supports scripted fresh invocations and structured output. The typed relay can claim work before invoking its configured adapter, with no model while idle. Confirm authentication, selected model/effort, isolation, permissions and actual event/restart behavior in an authorized disposable smoke test. Help/version checks and fake workers are preflight, not a real-provider pass. Fresh invocations load compact pinned context; they do not resume this desktop chat. [Official non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode).
+
+The relay is **not a Markdown-folder dispatcher**: its review poller does not consume existing `deliveries/*.md` or use `handoff.py` acknowledgements. Either configure both roles for [TRANSPORT.md](TRANSPORT.md), or separately implement/review a Markdown-to-CLI bridge preserving completion, hash-bound acknowledgement, ownership and crash rules. Do not start a second dispatcher on an active task during a capability probe.
 
 ## Keep candidate configuration out of the reviewer
 
@@ -60,3 +70,7 @@ Configure `verification` as `self_reported` or `unavailable`; these examples can
 - Relay time limits cover its child process group, not detached workers or instant server cancellation.
 
 Do a small authorized real smoke test before unattended use. In particular, real hook/MCP/instruction isolation and permission behavior have not been demonstrated by the synthetic tests. Documentation consulted 2026-10-11; recheck flags against the installed version before use.
+
+## Candidate existing Codex chat wakeup
+
+[QUEUE_BRIDGE.md](QUEUE_BRIDGE.md) documents reviewer queue adapter 0.1, a separate fake-tested local dispatcher. Its underlying `codex queue` woke one idle disposable App chat in an authorized local smoke; busy/archive/sleep/reboot and unattended adapter-to-App integration remain unverified. It preserves that chat/context, queues once per input hash and leaves publication/ack to the reviewer. `codex exec` remains an explicitly selected alternative, never automatic failure fallback. Neither route is installed/enabled by editing these documents.

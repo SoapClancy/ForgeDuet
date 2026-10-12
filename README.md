@@ -1,5 +1,7 @@
 # ForgeDuet
 
+Workflow instructions **v0.3.2** · relay runtime **0.3.0** (unchanged). See [validation and integration limits](docs/VALIDATION.md); an instruction revision does not change the runtime/cursor version.
+
 **Two AI roles, one auditable engineering loop.** One implements and tests; the other reviews the exact commit and tests independently. Humans set scope, choose the models, and resolve decisions that need human judgment.
 
 ForgeDuet packages a workflow learned from repeated development, independent review, and real-device testing. It works with different model providers; the roles are deliberately separate even when both use the same provider. Two agreeing models are not proof of correctness. Reproducible evidence is the acceptance criterion.
@@ -76,3 +78,16 @@ python3 scripts/sync_bundle.py --check
 See [docs/VALIDATION.md](docs/VALIDATION.md) for the actual validation performed. Unit tests exercise the local relay with synthetic workers; they do not establish real-provider integration or product correctness.
 
 MIT licensed. The package does not initialize your Git repository, configure a remote or start project monitors merely because you install it. The example adapters invoke your chosen CLI only when configured and started within your authorization. See the dated validation records for checks actually performed and remaining limits.
+
+## Candidate Markdown CLI reviewer bridge
+
+[Step-1 bridge documentation](protocol/MARKDOWN_BRIDGE.md) and [current review state template](templates/REVIEW_STATE.md). Fake-CLI validation only; no real provider smoke test, project activation or installed-skill rollout in this step. Existing Markdown locking and typed relay runtimes are unchanged.
+
+### Candidate existing-chat queue
+
+`scripts/queue_bridge.py` watches locally and queues a new delivery into an authorized existing Codex review chat. Idle checks invoke no model; queue success is not a completed review. See [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md). Candidate 0.1 is fake-CLI tested; the underlying CLI has one real idle-chat smoke. Busy/archive/sleep/reboot and actual unattended deployment remain unverified. No project monitor is started by this update.
+
+
+## Current installation and trial status — 2026-10-12
+
+Both role skills now include the candidate queue adapter and the rule to verify its existing detector rather than start a competing watcher. The real synthetic write/ack smoke passed and received independent review; this proves the bounded transport/write path, not semantic review quality or arbitrary project permissions. Busy/archived chats and sleep/reboot remain untested. Install the complete skill directories, then explicitly configure the new project, dedicated chat and narrow write/test permissions before starting a trial. Installing does not start polling. See [the smoke report](docs/deliveries/2026-10-12-queue-write-smoke.md) and [queue setup](protocol/QUEUE_BRIDGE.md). Earlier dated validation entries retain their historical scope.

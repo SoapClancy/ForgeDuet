@@ -1,5 +1,7 @@
 # ForgeDuet
 
+工作流说明 **v0.3.2**；relay 运行时仍为 **0.3.0**。说明版本与运行时/游标版本分开，实测范围和接入限制见[验证记录](docs/VALIDATION.md)。
+
 **一个 AI 编码和自测，另一个 AI 审查和独立测试，用证据推动双方收敛。** 人类指定范围、模型和强度，提出需求，处理争议，并参与设备等现实环境验收。
 
 这套方法来自多轮实际项目协作。价值在于审查方自己读代码、复现问题、提供不能随意改松的回归测试，以及编码方用反向验证证明修复确实被测试覆盖。两个模型赞同同一个结论，并不能代替证据。
@@ -48,3 +50,16 @@ python3 scripts/sync_bundle.py --check
 测试使用隔离的临时项目和合成工作进程，不调用付费 AI。完整使用方式和限制见 [English README](README.md)；本次实际检查见 [VALIDATION.md](docs/VALIDATION.md)。
 
 MIT 许可证。真实崩溃日志、截图、设备信息等默认不进 Git；报告保留脱敏摘要、校验值和可访问的证据位置。Git 仓库初始化和远程发布由使用者自行处理。
+
+## 候选 Markdown → Codex CLI 审查桥接
+
+[Step-1 bridge documentation](protocol/MARKDOWN_BRIDGE.md) and [current review state template](templates/REVIEW_STATE.md). Fake-CLI validation only; no real provider smoke test, project activation or installed-skill rollout in this step. Existing Markdown locking and typed relay runtimes are unchanged.
+
+### 候选：唤醒原审查聊天
+
+`scripts/queue_bridge.py` 在本地检查交付文件，有新交付才向已获授权的 Codex 审查聊天排队。空闲检查不调用模型；排队不等于审完，仍由审查方发布报告后确认处理。见 [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md)。适配器 0.1 只测过假接口，底层命令已有一次空闲聊天实测；忙碌、归档、睡眠、重启及正式无人值守仍未验证。本次不会启动任何项目监控。
+
+
+## 当前安装与试用状态 — 2026-10-12
+
+两份技能都包含候选 queue 适配器，并要求核验已有监听器，不另开竞争监听。一次真实合成项目的写入/确认闭环已通过并获独立复核；它只证明限定的交接与写入路径，不证明审查质量或任意项目权限。忙碌/归档聊天、睡眠/重启尚未测试。安装完整技能目录后，先明确新项目、专用审查聊天及必要写入/测试权限，再开始试用。安装不会开启轮询。参见[实测报告](docs/deliveries/2026-10-12-queue-write-smoke.md)和[queue 配置](protocol/QUEUE_BRIDGE.md)。此前按日期记录的验证结论保留其历史范围。

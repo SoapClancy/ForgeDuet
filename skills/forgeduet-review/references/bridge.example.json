@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "cli": "/REPLACE/trusted/codex",
+  "model": "REPLACE_WITH_EXPLICIT_USER_CHOICE",
+  "effort": "REPLACE_WITH_EXPLICIT_USER_CHOICE",
+  "owner": "review / REPLACE_MODEL / REPLACE_SESSION",
+  "project_dir": "/REPLACE/project",
+  "control_dir": "/REPLACE/trusted-review-workspace",
+  "runtime_dir": "/REPLACE/private-bridge-runtime",
+  "cursor": "/REPLACE/project/coordination/.runtime/review.json",
+  "instructions": "/REPLACE/trusted/forgeduet-review/SKILL.md",
+  "state_file": "/REPLACE/project/coordination/CURRENT_REVIEW.md",
+  "interval": 60,
+  "timeout_seconds": 3600,
+  "desktop_notifications": true
+}
