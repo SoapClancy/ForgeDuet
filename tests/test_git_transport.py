@@ -159,7 +159,7 @@ class GitTests(unittest.TestCase):
             first=self.build.notify('synthetic offline')
             second=self.build.notify('synthetic offline')
         self.assertEqual(first,second);self.assertEqual(os_notice.call_count,1)
-        notices=list((self.build.root/'deliveries').glob('git-transport-*.md'))
+        notices=list((self.build.root/'reviews').glob('git-transport-*.md'))
         self.assertEqual(len(notices),1)
         self.assertIn('review_verdict: null',notices[0].read_text())
         self.assertEqual(first['model_calls'],0)

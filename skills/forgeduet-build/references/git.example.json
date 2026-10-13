@@ -10,5 +10,7 @@
   "interval": 60,
   "timeout": 30,
   "max_bytes": 16777216,
-  "desktop_notifications": true
+  "desktop_notifications": true,
+  "max_network_errors": 5,
+  "retry_max_seconds": 300
 }

@@ -1,4 +1,4 @@
-# Git handoff transport — candidate 0.1
+# Git handoff transport — candidate 0.2
 
 Use this mode when the builder and reviewer are on different machines. It projects verified remote records into the same local `deliveries/`, `reviews/` and `review-tests/` layout used by the existing local detector. Git synchronization itself invokes no model. Start each machine's existing verified client wakeup/detector against its **own** mailbox; do not start an AI timer to perform Git fetches.
 
@@ -20,7 +20,7 @@ python3 /trusted/forgeduet/scripts/git_transport.py once --config /trusted/git-r
 python3 /trusted/forgeduet/scripts/git_transport.py watch --config /trusted/git-run.json
 ```
 
-Default interval: 60 seconds. The foreground local process must remain running (or be supervised by an explicitly configured local service); sleeping/offline machines do not fetch. No daemon, login hook or project watcher is installed automatically.
+Default interval: 60 seconds. Default remote command timeout: 30 seconds; choose a larger timeout before run initialization for a slow/large first fetch. The frozen config cannot be edited underneath an active runtime. Default connectivity policy: at most 5 consecutive failed remote attempts, exponential delay from the interval capped at 300 seconds (never below the interval). Configure `max_network_errors` / `retry_max_seconds` before initialization. Auth/permissions, collisions, altered history, wrong manifests, corrupt state and unknown failures stop immediately. Recognized DNS/connectivity/remote timeouts and a temporarily missing local remote return `retrying`; `once` exits 0 with that JSON and makes no model/OS notice. Inspect the status rather than treating exit 0 as delivery completion. `watch` stays running and retries locally when due. Retry counters/deadlines and transfer intent survive restart; successful sync clears the consecutive count. After the configured failures, notify once for that incident and persist a stop. Explicitly run `resume --config ...` after checking the cause, then restart watch; this never clears Git heads, pending commits or acknowledgements. The foreground local process must remain running (or be supervised by an explicitly configured local service); sleeping/offline machines do not fetch. No daemon, login hook or project watcher is installed automatically.
 
 ## Guarantees and limits
 
@@ -30,7 +30,7 @@ Only completion-marked reports are sent. A manifest binds role, run ID, relative
 
 Local cursors, acknowledgements, locks, `updates.log`, private runtime and raw logs are **never synchronized**. Each local log records its imported commit. Detection does not acknowledge work. The recipient's model performs semantic review, publishes its response and exact-hash acknowledges locally; its response travels back on its own role branch. With queue, preserve the event binding lines in the resulting report. Build/review acceptance still names the same full product SHA.
 
-A push intent saves the exact commit before pushing. After network uncertainty, restart first checks the remote head: the same commit is recognized as sent, or that same Git commit can be pushed again only while the remote still has the old parent. This retries Git transfer, never model work. Divergence/missing journals are not repaired by force push, deleting history or adopting unknown remote state. Corruption/conflicts/transport errors retain diagnostics and stop; the CLI emits a deduplicated local transport notice and best-effort OS alert, never a product verdict. Resolve the cause and resume with the original runtime. A new run ID is not a workaround for unresolved earlier work.
+A push intent saves the exact commit before pushing. After network uncertainty, restart first checks the remote head: the same commit is recognized as sent, or that same Git commit can be pushed again only while the remote still has the old parent. This retries Git transfer, never model work. Divergence/missing journals are not repaired by force push, deleting history or adopting unknown remote state. Corruption/conflicts/permanent failures or exhausted network retries retain diagnostics and stop; the CLI emits a deduplicated local transport notice and best-effort OS alert, never a product verdict. Resolve the cause and resume with the original runtime. A new run ID is not a workaround for unresolved earlier work.
 
 Tests use two independent local mailboxes and a real temporary bare Git remote. SSH/HTTPS credentials, actual cross-machine network failures, sleeping services and real-provider client wakeups still require project-specific validation.
 
@@ -38,3 +38,16 @@ Primary Git command semantics: [fetch](https://git-scm.com/docs/git-fetch), [pus
 
 
 Author: ChatGPT. Recorded: 2026-10-13T21:55:29.122603+01:00
+
+
+## Local-only stop notices — FD-GIT-002
+
+Build notifications go to the **local `reviews/` input**; review notifications go to the **local `deliveries/` input**. They carry `record_type: transport_notice`, `transport_scope: local`, `transport_kind: git_sync`, and `review_verdict: null`. They are not peer handoffs and no opposite-machine model needs to wake for them. A role durably handles and exact-hash acknowledges its own local notice; it is not a new source candidate.
+
+The filenames `git-transport-<64hex>.md` and `git-transport-response-<64hex>.md` are reserved local namespaces. `local_snapshot()` always excludes them (including legacy notices placed in the wrong output folder), and incoming remote snapshots containing them are rejected. Local extra files in the input folder are allowed; received peer files still cannot overwrite a local collision.
+
+A queue-driven local reviewer still follows its bound-report/ack contract: if it must publish a local gate response, name it `reviews/git-transport-response-<Queue-Event-ID>.md`, retain the binding lines, mark it `transport_scope: local`, then ack. The reserved response is excluded from Git too. Other clients may just handle the local diagnostic and ack locally; do not turn it into a peer delivery.
+
+Notification dedup completes only after successful durable local publication. Failed publication is retried on the next notification attempt while a recorded OS attempt is not repeated. A changed/missing successfully published notice requires reconciliation. Network retry exhaustion retains the same reason/incident ID across process restarts, avoiding duplicate local notices; a later separately resumed outage has a new incident ID.
+
+If an older candidate has **already pushed** a wrongly routed notice, stop and reconcile the legacy channel with its owners. This update neither deletes published records nor force-rewrites remote history to hide it. New role branches/runtimes are not a workaround for unresolved old dispatch.

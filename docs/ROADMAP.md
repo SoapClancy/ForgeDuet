@@ -29,3 +29,11 @@ Queue adapter 0.1 candidate: local detector → existing Codex reviewer chat; fa
 ## v0.4 candidate scope
 
 Git synchronization now supports two role-owned remote branches, complete immutable reports, public regressions, manifest/hash/ancestry checks and recoverable transfer intents; private runtime remains local. Provider quota defaults to local wait/same-task continuation for validated terminal/reset receipts in both relay roles, queue and the pre-work exec path. 202 synthetic tests passed; independent review and real SSH/HTTPS/client quota-telemetry trials remain pending. No universal Codex/Claude telemetry observer is shipped; unsupported reset/terminal metadata is a gate. See [Git mode](../protocol/GIT_TRANSPORT.md) and [quota mode](../protocol/QUOTA_RESUME.md).
+
+
+## Open desktop quota integration (required original goal, not completed)
+
+- **FD-QUOTA-DESKTOP-001 — Codex App/queue:** investigate and implement a trusted observer associating actual terminal quota failure, matching queued message/turn, reliable reset time and partial-work checkpoint; only then validate one safe same-chat continuation. No real observer is bundled yet.
+- **FD-QUOTA-DESKTOP-002 — Claude Code desktop:** investigate reliable ended-session/quota/reset telemetry and a verified local reset-to-session-wakeup path; `handoff.py watch` observes reviews, not account limits. No automatic quota continuation currently exists for this mode.
+
+Both are explicit remaining parts of the user's requested desktop goal, not claimed as P3-complete or covered by fake-client tests. Investigations and real-client experiments must preserve project/model/budget/permission authorization and report unsupported client capabilities honestly.

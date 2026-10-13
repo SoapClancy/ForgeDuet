@@ -1,8 +1,21 @@
 # Provider quota wait and continuation — candidate v0.4.0
 
-**Renewable provider token/usage exhaustion defaults to local wait, then continuation after the reported reset.** This is distinct from a human token/currency/time/round budget, user pause, missing permissions, billing exhaustion, server capacity or an unknown dispatch. Those gates still stop and are never silently auto-resumed. Both roles retain their chosen model/effort; no paid-credit purchase or cheaper-model fallback.
+**Current desktop pairing is NOT automatically resumed after quota exhaustion.** Claude Code desktop build sessions have no implemented reset-to-wakeup bridge here; Codex App review chats using queue have no bundled real quota observer producing `quota_status_file`. These are open integration tasks, not enabled features.
+
+With a configured, trustworthy client adapter receipt, renewable provider token/usage exhaustion defaults to local wait, then continuation after its reported reset. This is distinct from a human token/currency/time/round budget, user pause, missing permissions, billing exhaustion, server capacity or an unknown dispatch. Those gates still stop and are never silently auto-resumed. Both roles retain their chosen model/effort; no paid-credit purchase or cheaper-model fallback.
 
 The wait uses timestamps and local code, no basic/advanced model probes. Persist the job/input identity, partial-work checkpoint, quota receipt and reset timestamp before waiting. A restart retains the same work. The process must remain running, or be restarted by an authorized local supervisor; this package cannot wake a powered-off Mac or bypass client limits. Explicit user pause always wins. Missing/unreliable reset metadata is reported as a gate, rather than inventing a reset schedule or repeatedly trying a model.
+
+## Availability by mode
+
+| Mode | Implemented capability | Current real-client readiness |
+| --- | --- | --- |
+| Claude Code desktop build + existing background file watcher | File updates can wake a supported session; watcher does not detect account quota/reset | Automatic quota continuation unavailable; FD-QUOTA-DESKTOP-002 |
+| Codex App review + queue | Wait/continue policy consumes a matching terminal/reset receipt from a configured observer | No real observer bundled; unavailable in the current pairing, FD-QUOTA-DESKTOP-001 |
+| Typed CLI relay, build/review | Persistent wait + same-job continuation when a trusted adapter emits the schema below | Conditional support; adapter capability must be configured and independently verified; synthetic adapter tested |
+| Ephemeral exec | Narrow pre-item typed quota failure waits, then starts the same input again | Synthetic shape tested only; not a general real-Codex promise |
+
+**Default-on is a policy for supported receipts, not proof that a desktop client supplies them.** The original user goal for the two-desktop combination remains incomplete until both desktop integration tasks are implemented and verified. Do not claim it works merely because the receipt schema and fake tests exist.
 
 ## Trusted client receipt contract
 

@@ -9,18 +9,28 @@ import contextlib
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import time
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 
 from handoff import Writer, HandoffError, atomic_json, complete, inside, require, root_path
 from markdown_bridge import desktop_notice
 
 OWN = {'build': {'deliveries'}, 'review': {'reviews', 'review-tests'}}
 MANIFEST = 'handoff-manifest.json'
+
+
+class RetryableGitError(HandoffError):
+    """Only a recognized remote-connectivity failure, never integrity/auth."""
+
+
+def local_only(name):
+    # Reserved on both channels, including notices from the earlier candidate.
+    return re.fullmatch(r'git-transport-(?:response-)?[0-9a-f]{64}\.md', PurePosixPath(name).name) is not None
 
 
 def sha(data):
@@ -32,7 +42,7 @@ class GitTransport:
         self.config = Path(config).resolve(strict=True)
         c = json.loads(self.config.read_text())
         required = {'schema', 'role', 'run_id', 'remote', 'mailbox', 'runtime', 'author', 'email'}
-        require(isinstance(c, dict) and set(c) <= required | {'interval', 'timeout', 'max_bytes', 'desktop_notifications'} and required <= set(c), 'Invalid Git transport config')
+        require(isinstance(c, dict) and set(c) <= required | {'interval', 'timeout', 'max_bytes', 'desktop_notifications', 'max_network_errors', 'retry_max_seconds'} and required <= set(c), 'Invalid Git transport config')
         require(type(c['schema']) is int and c['schema'] == 1 and c['role'] in OWN and isinstance(c['run_id'],str) and re.fullmatch(r'[A-Za-z0-9_-]{1,80}', c['run_id']), 'Invalid role/run ID')
         for field in ('remote', 'author', 'email'):
             require(isinstance(c[field], str) and c[field] and '\n' not in c[field] and not c[field].startswith('-'), 'Invalid '+field)
@@ -42,7 +52,8 @@ class GitTransport:
         if remote.startswith('https://'):
             require(urlsplit(remote).username is None and urlsplit(remote).password is None, 'Use credential helpers, not credentials embedded in remote URL')
         require(remote.startswith(('https://', 'ssh://', 'file://', '/')) or re.fullmatch(r'[^@\s:]+@[^\s:]+:[^\s]+', remote), 'Use explicit HTTPS/SSH or local fixture remote')
-        for field, default in [('interval', 60), ('timeout', 30), ('max_bytes', 16 * 1024 * 1024)]:
+        for field, default in [('interval', 60), ('timeout', 30), ('max_bytes', 16 * 1024 * 1024),
+                               ('max_network_errors', 5), ('retry_max_seconds', 300)]:
             c.setdefault(field, default)
             require(type(c[field]) is int and c[field] > 0, 'Positive integer '+field+' required')
         self.c = c
@@ -58,15 +69,44 @@ class GitTransport:
         self.peer = peer
         self.peer_branch = 'refs/heads/forgeduet/'+c['run_id']+'/'+peer
 
+    def transient(self, diagnostics):
+        text = diagnostics.lower()
+        permanent = ('authentication failed', 'permission denied', 'access denied',
+                     'could not read username', 'non-fast-forward', '[rejected]',
+                     '[remote rejected]', 'repository not found', 'http 401', 'http 403')
+        if any(item in text for item in permanent):
+            return False
+        remote = self.c['remote']
+        path = (Path(remote) if remote.startswith('/') else
+                Path(unquote(urlsplit(remote).path)) if remote.startswith('file://') else None)
+        # A temporarily moved/unmounted local fixture/share is also recoverable.
+        if path is not None and not path.exists():
+            return True
+        return any(item in text for item in (
+            'could not resolve host', 'could not resolve hostname', 'temporary failure in name resolution',
+            'failed to connect', 'connection refused', 'connection timed out', 'connection reset',
+            'connection closed', 'network is unreachable', 'no route to host', 'remote end hung up',
+            'early eof', 'http 502', 'http 503', 'http 504', 'returned error: 502',
+            'returned error: 503', 'returned error: 504', 'operation timed out'))
+
     def git(self, *args, data=None, ok=(0,)):
         env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
         env.update(GIT_TERMINAL_PROMPT='0', GIT_AUTHOR_NAME=self.c['author'], GIT_AUTHOR_EMAIL=self.c['email'],
-                   GIT_COMMITTER_NAME=self.c['author'], GIT_COMMITTER_EMAIL=self.c['email'])
+                   GIT_COMMITTER_NAME=self.c['author'], GIT_COMMITTER_EMAIL=self.c['email'], LC_ALL='C')
         command = ['git', '--git-dir='+str(self.store), '-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgsign=false',
                    '-c', 'protocol.ext.allow=never', '-c', 'gc.auto=0', '-c', 'maintenance.auto=false', '-c', 'credential.interactive=false'] + list(args)
-        p = subprocess.run(command, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                           env=env, timeout=self.c['timeout'])
-        require(p.returncode in ok, 'Git operation failed; retain state: '+p.stderr.decode(errors='replace')[:800])
+        network = args[0] in ('ls-remote', 'fetch', 'push')
+        try:
+            p = subprocess.run(command, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               env=env, timeout=self.c['timeout'])
+        except subprocess.TimeoutExpired as exc:
+            if network:
+                raise RetryableGitError('Remote Git operation timed out; retain transfer intent: '+args[0]) from exc
+            raise
+        if p.returncode not in ok:
+            detail = p.stderr.decode(errors='replace')[:800]
+            error = RetryableGitError if network and self.transient(detail) else HandoffError
+            raise error('Git operation failed; retain state: '+detail)
         return p.stdout
 
     @contextlib.contextmanager
@@ -131,6 +171,7 @@ class GitTransport:
         expected={'schema':1,'run_id':self.c['run_id'],'role':role,'files':{n:sha(d) for n,d in sorted(entries.items())}}
         require(manifest==expected,'Wrong run/role/hash manifest')
         for n,d in entries.items():
+            require(not local_only(n), 'Local-only transport notice/response in remote snapshot; reconcile legacy channel')
             if n.split('/')[0]!='review-tests':require(complete(d),'Incomplete peer report')
         return entries
 
@@ -144,6 +185,7 @@ class GitTransport:
                 if not p.is_file():continue
                 rel=p.relative_to(self.root).as_posix()
                 if any(x.startswith('.') for x in p.relative_to(top).parts):continue
+                if local_only(rel):continue
                 self.path(rel,self.c['role'])
                 require(p.stat().st_size<=self.c['max_bytes'],'Oversized local handoff')
                 data=p.read_bytes()
@@ -232,43 +274,124 @@ class GitTransport:
 
     def notify(self, error):
         detail={'status':'needs_human','error':str(error),'role':self.c['role'],'run_id':self.c['run_id']}
+        retry_path=self.runtime/'network-retry.json'
+        if retry_path.exists() and not retry_path.is_symlink():
+            try:
+                retry=json.loads(retry_path.read_text())
+                if retry.get('stopped'):detail['network_incident']=retry.get('incident',0)
+            except (OSError,ValueError):pass
         key=sha(json.dumps(detail,sort_keys=True).encode())
         path=self.runtime/('notice-'+key+'.json')
-        if path.exists():
-            require(not path.is_symlink(),'Symlink notice receipt')
-            return json.loads(path.read_text())
-        result={'detail':detail,'model_calls':0}
+        require(not path.is_symlink(),'Symlink notice receipt')
+        old=json.loads(path.read_text()) if path.exists() else {}
+        if old:
+            require(old.get('detail')==detail,'Wrong notice receipt identity; preserve it')
+        result={'schema':2,'detail':detail,'model_calls':0}
+        if old.get('schema')==2:
+            result.update({k:old[k] for k in ('desktop','local_errors') if k in old})
+        elif old:
+            result['legacy_receipt']=old
+        local=old.get('local')
+        if local:
+            target=inside(self.root,local['path'])
+            require(target.is_file() and complete(target.read_bytes()) and sha(target.read_bytes())==local['sha256'],
+                    'Previously published local notice changed/missing; reconcile')
+            return old  # Only successful durable local publication completes dedup.
         w=Writer(self.root);owner='git-sync / '+self.c['role'];token=None
         try:
             token=w.acquire(owner,'record stopped Git transport')
-            folder='deliveries' if self.c['role']=='build' else 'reviews'
+            # Wake this machine's role, not the remote role. Never export this namespace.
+            folder='reviews' if self.c['role']=='build' else 'deliveries'
             name=folder+'/git-transport-'+key+'.md'
             target=inside(self.root,name)
             if target.exists():
-                require(complete(target.read_bytes()),'Conflicting transport notice')
-                result['peer']={'path':name,'sha256':sha(target.read_bytes())}
+                text=target.read_text()
+                require(complete(target.read_bytes()) and 'transport_scope: local' in text.splitlines()
+                        and json.dumps(detail,ensure_ascii=False) in text.splitlines(),'Conflicting transport notice')
+                result['local']={'path':name,'sha256':sha(target.read_bytes())}
             else:
-                result['peer']=w.publish(owner,token,name,'record_type: transport_notice\nreview_verdict: null\n\nGit synchronization stopped; no source approval and no delivery acknowledgement.\n'+json.dumps(detail,ensure_ascii=False))
-        except (HandoffError,OSError,ValueError) as exc: result['peer_error']=str(exc)
+                result['local']=w.publish(owner,token,name,'record_type: transport_notice\ntransport_scope: local\ntransport_kind: git_sync\nreview_verdict: null\n\nLocal Git synchronization stopped; handle only this local transport gate, not a product candidate. Never export this notice or its local response. If queue requires a bound local response, name it reviews/git-transport-response-<Queue-Event-ID>.md (or deliveries/ for build), mark transport_scope: local, retain the queue binding lines, then acknowledge only this notice.\n'+json.dumps(detail,ensure_ascii=False))
+        except (HandoffError,OSError,ValueError) as exc:
+            result['local_error']=str(exc)
+            result.setdefault('local_errors',[]).append(str(exc))
         finally:
             if token is not None: w.release(owner,token)
-        result['desktop']=(desktop_notice('ForgeDuet Git 交接需核对：'+str(error)[:120]) if self.c['desktop_notifications'] else {'status':'disabled'})
+        if 'desktop' not in result:
+            result['desktop']=(desktop_notice('ForgeDuet Git 交接需核对：'+str(error)[:120]) if self.c['desktop_notifications'] else {'status':'disabled'})
         atomic_json(path,result)
         return result
+
+    def retry_state(self):
+        path=self.runtime/'network-retry.json'
+        require(not path.is_symlink(),'Symlink network retry state')
+        if not path.exists():
+            value={'schema':1,'identity':self.identity,'consecutive_errors':0,'next_retry_at':None,
+                   'stopped':False,'history':[],'incident':0}
+            atomic_json(path,value)
+            return value
+        value=json.loads(path.read_text())
+        require(value.get('schema')==1 and value.get('identity')==self.identity and
+                type(value.get('consecutive_errors')) is int and value['consecutive_errors']>=0 and
+                type(value.get('stopped')) is bool and isinstance(value.get('history'),list),
+                'Corrupt network retry state; preserve and reconcile')
+        value.setdefault('incident',0)
+        require(type(value['incident']) is int and value['incident']>=0,'Invalid network incident counter')
+        for field in ('next_retry_at','last_error_at'):
+            number=value.get(field)
+            require(number is None or (type(number) in (int,float) and math.isfinite(number) and number>0),
+                    'Invalid retry clock')
+        return value
+
+    def resume(self):
+        # Explicit operator action; does not change the Git journal or any input ack.
+        with self.guard():
+            self.load();retry=self.retry_state()
+            retry.update(consecutive_errors=0,next_retry_at=None,stopped=False)
+            retry.pop('last_error_at',None);retry.pop('stop_reason',None)
+            atomic_json(self.runtime/'network-retry.json',retry)
+            return {'status':'resumed','model_calls':0}
 
     def sync(self):
         with self.guard():
             state=self.load()
-            result={'published':self.publish(state),'received':self.receive(state),'model_calls':0}
+            retry=self.retry_state();now=time.time()
+            require(not retry['stopped'],retry.get('stop_reason') or 'Network retries exhausted; explicit resume required after checking the cause')
+            require(now+5>=retry.get('last_error_at',0),'Clock moved backwards; reconcile network retry state')
+            if retry['next_retry_at'] is not None and now<retry['next_retry_at']:
+                return {'status':'retrying','consecutive_errors':retry['consecutive_errors'],
+                        'next_retry_at':retry['next_retry_at'],'model_calls':0}
+            try:
+                result={'published':self.publish(state),'received':self.receive(state),'model_calls':0}
+            except RetryableGitError as exc:
+                count=retry['consecutive_errors']+1
+                if count==1:retry['incident']+=1
+                delay=max(self.c['interval'],min(self.c['interval']*2**min(count-1,20),self.c['retry_max_seconds']))
+                at=time.time()
+                retry.update(consecutive_errors=count,last_error_at=at,next_retry_at=at+delay,
+                             stopped=count>=self.c['max_network_errors'])
+                retry['history'].append({'error':str(exc),'at':at,'next_retry_at':at+delay})
+                if retry['stopped']:
+                    retry['stop_reason']='Consecutive network failures reached the configured limit; inspect and resume. '+str(exc)
+                atomic_json(self.runtime/'network-retry.json',retry)
+                if retry['stopped']:
+                    raise HandoffError(retry['stop_reason']) from exc
+                return {'status':'retrying','error':str(exc),'consecutive_errors':count,
+                        'next_retry_at':at+delay,'model_calls':0}
+            retry.update(consecutive_errors=0,next_retry_at=None,stopped=False)
+            retry.pop('last_error_at',None);retry.pop('stop_reason',None)
+            atomic_json(self.runtime/'network-retry.json',retry)
             return result
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=('once','watch'));p.add_argument('--config',required=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('command',choices=('once','watch','resume'));p.add_argument('--config',required=True)
     args=p.parse_args()
     transport=None
     try:
         transport=GitTransport(args.config)
+        if args.command=='resume':
+            print(json.dumps(transport.resume()),flush=True)
+            return 0
         while True:
             print(json.dumps(transport.sync(),ensure_ascii=False),flush=True)
             if args.command=='once':return 0
