@@ -45,3 +45,4 @@
 2026-10-13T21:55:29+01:00 | ChatGPT / git transport and quota resume | Documented candidate v0.4 Git role channels and default quota continuation, explicit source/permission/provider telemetry boundaries; no runtime activation or installed skill changes.
 2026-10-13T21:56:56+01:00 | ChatGPT / git transport and quota resume | Added deduplicated Git stop-notice and history-rewind regressions; synchronized both standalone candidate skill bundles.
 2026-10-13T22:00:43+01:00 | ChatGPT / git transport and quota resume | Recorded 202/202 full-suite validation, exact tested code hashes and feature scope; preserved earlier failed fixture logs; independent and real-provider review remains pending.
+2026-10-13T22:03:41+01:00 | ChatGPT / git sync and quota candidate delivery | published docs/deliveries/2026-10-13-git-sync-quota-resume-round-01.md sha256=64f018232203453e54faff1616ecd3c52a14c149224fc767e7644c7b9fcf9cf9
