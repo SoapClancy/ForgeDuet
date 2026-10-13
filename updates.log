@@ -62,3 +62,8 @@
 2026-10-13T22:49:55+01:00 | ChatGPT / git transport and quota resume | Correction to previous update: failed patch made no edits; this locked batch actually applies notification/TLS hardening and documents continuous retry, optional stop, private status and upgrade limits.
 2026-10-13T22:50:23+01:00 | ChatGPT / git transport and quota resume | Synchronize both standalone candidate skills with canonical continuous Git retry helper, protocol and template; installed skills untouched.
 2026-10-13T22:52:29+01:00 | ChatGPT / git transport and quota resume | Record 232/232 final suite, fixed-8096 negative control, raw hashes and bounded validation; prior candidate approval does not cover these source changes.
+2026-10-13T22:52:51+01:00 | ChatGPT / git transport and quota resume | Create local source candidate after successful 232/232 tests; preserve no push/merge/install/monitor scope.
+2026-10-13T22:53:29+01:00 | ChatGPT / git transport and quota resume | Export and hash fixed candidate 85a655f source archive; verify every tested Python source/test hash against it.
+2026-10-13T22:54:44+01:00 | ChatGPT / git transport and quota resume | published docs/deliveries/2026-10-13-git-sync-round-03.md sha256=5354673739c81acb5f7d8bf8a5c81378191acb33d7973b2b458f12fdae19926e
+2026-10-13T22:54:44+01:00 | ChatGPT / git transport and quota resume | Publish immutable round-3 delivery binding 85a655f, source archive, 232-test evidence and desktop/cross-host limitations; request independent rereview.
+2026-10-13T22:55:21+01:00 | ChatGPT / git transport and quota resume | Prepare local record-only commit of immutable round-3 delivery and append-only log; candidate remains 85a655fe73d9370535f14b94986d082b66ec8af7; no push/merge/install.
