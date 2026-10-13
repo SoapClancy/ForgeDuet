@@ -53,3 +53,4 @@
 2026-10-13T22:24:55+01:00 | ChatGPT / git transport and quota resume | Clarified current desktop pairing has no working automatic quota continuation; opened separate Codex/Claude desktop integration tasks and documented local-only notice responses plus bounded network recovery.
 2026-10-13T22:27:59+01:00 | ChatGPT / git transport and quota resume | Added queue/Git joint regression: local notice gets one bound local response and exact ack, while neither record wakes the remote side.
 2026-10-13T22:31:31+01:00 | ChatGPT / git transport and quota resume | Recorded round-2 fixes, 218/218 full regression result and exact old/fixed controls; explicitly retained desktop quota integration as incomplete, pending independent rereview.
+2026-10-13T22:33:59+01:00 | ChatGPT / Git and quota round-2 delivery | published docs/deliveries/2026-10-13-git-sync-quota-resume-round-02.md sha256=9f3f1af19d9996ab5ffb39adf7609bfdea4ee08247068b73688299300c152828
