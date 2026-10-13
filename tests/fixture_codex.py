@@ -15,6 +15,11 @@ with (work / 'calls.jsonl').open('a') as out:
 mode_file = work / 'mode'
 mode = mode_file.read_text().strip() if mode_file.exists() else 'ok'
 (work / 'started').write_text('yes')
+if mode.startswith('quota'):
+    if mode == 'quota_started':
+        print(json.dumps({'type':'item.completed','item':{'type':'command_execution'}}))
+    print(json.dumps({'type':'turn.failed','error':{'code':'usage_limit_reached','resets_at':None if mode=='quota_unknown' else time.time()+50}}))
+    sys.exit(75)
 if mode == 'fail':
     print('fake failure', file=sys.stderr)
     sys.exit(7)

@@ -1,6 +1,6 @@
 # ForgeDuet
 
-Workflow instructions **v0.3.2** · relay runtime **0.3.0** (unchanged). See [validation and integration limits](docs/VALIDATION.md); an instruction revision does not change the runtime/cursor version.
+Workflow instructions **v0.4.0 candidate** · relay runtime **0.4.0 candidate**. See [validation and integration limits](docs/VALIDATION.md); an instruction revision does not change the runtime/cursor version.
 
 **Two AI roles, one auditable engineering loop.** One implements and tests; the other reviews the exact commit and tests independently. Humans set scope, choose the models, and resolve decisions that need human judgment.
 
@@ -91,3 +91,8 @@ MIT licensed. The package does not initialize your Git repository, configure a r
 ## Current installation and trial status — 2026-10-12
 
 Both role skills now include the candidate queue adapter and the rule to verify its existing detector rather than start a competing watcher. The real synthetic write/ack smoke passed and received independent review; this proves the bounded transport/write path, not semantic review quality or arbitrary project permissions. Busy/archived chats and sleep/reboot remain untested. Install the complete skill directories, then explicitly configure the new project, dedicated chat and narrow write/test permissions before starting a trial. Installing does not start polling. See [the smoke report](docs/deliveries/2026-10-12-queue-write-smoke.md) and [queue setup](protocol/QUEUE_BRIDGE.md). Earlier dated validation entries retain their historical scope.
+
+
+## Candidate remote collaboration and quota continuation
+
+Use [Git handoff](protocol/GIT_TRANSPORT.md) for separate machines and [quota wait/continuation](protocol/QUOTA_RESUME.md) for default-on renewable provider limits with trustworthy reset/terminal telemetry. Both use local scripts while idle. Product code still travels through explicitly authorized Git branches and exact-SHA snapshots; private runtime stays local. No production monitor, provider call, credential setup or installed-skill upgrade is performed by these additions. Existing v0.3 runs retain their byte pins and require explicit drained-run migration.

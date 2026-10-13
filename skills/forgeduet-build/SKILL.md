@@ -5,7 +5,7 @@ description: Implement and test changes as the ForgeDuet builder or build role, 
 
 # ForgeDuet — build and test
 
-Workflow instructions v0.3.2; relay runtime 0.3.0, unchanged. These are separate version tracks.
+Workflow instructions v0.4.0 candidate; relay runtime 0.4.0 candidate. These are separate version tracks.
 
 You own implementation and self-tests. A separate reviewer reads the exact commit and verifies independently. Deliver a concrete tested change; agreement alone is not an acceptance gate.
 
@@ -52,7 +52,7 @@ Own build reports, product changes, and adopted tests. Read counterpart reports/
 
 ## Candidate Markdown CLI bridge — prepare only
 
-See [MARKDOWN_BRIDGE.md](references/MARKDOWN_BRIDGE.md) and [REVIEW_STATE.md](references/REVIEW_STATE.md) for the step-1 reviewer bridge and compact source-cited context. It is fake-CLI tested only, separate from relay runtime 0.3.0. Do not install/start it on a project or invoke a real model without the separately authorized provider smoke test; preserve existing pauses. The bridge publishes under the shared lock before exact-hash acknowledgement; unresolved calls require human reconciliation instead of automatic paid retries. This paragraph adds no project, model, filesystem or spending authority.
+See [MARKDOWN_BRIDGE.md](references/MARKDOWN_BRIDGE.md) and [REVIEW_STATE.md](references/REVIEW_STATE.md) for the step-1 reviewer bridge and compact source-cited context. It is fake-CLI tested only, separate from the typed relay runtime. Do not install/start it on a project or invoke a real model without the separately authorized provider smoke test; preserve existing pauses. The bridge publishes under the shared lock before exact-hash acknowledgement; unresolved calls require human reconciliation instead of automatic paid retries. This paragraph adds no project, model, filesystem or spending authority.
 
 Bridge `transport_notice` / `bridge_stopped` records are transport gates, never product findings or approval. Durably handle and acknowledge only that notice on the receiving role cursor; preserve the original delivery, model choice and pause/recovery gates. See the candidate bridge reference for stop alerts, positive watchdog and state-before-delivery freeze order. Generating notices is model-free; a peer model wake to read one is not.
 
@@ -61,3 +61,9 @@ Bridge `transport_notice` / `bridge_stopped` records are transport gates, never 
 For a human-authorized existing Codex **review** chat, see [QUEUE_BRIDGE.md](references/QUEUE_BRIDGE.md) and [queue.example.json](references/queue.example.json). Queue adapter 0.1 has fake-CLI tests; the underlying CLI has one idle-chat real smoke, not busy/archive/sleep/reboot validation. This is a separate candidate, not relay runtime or project activation. Preserve paused projects, selected model/effort and explicit real-test gates. Claude's own verified background watcher remains separate.
 
 When this adapter is actually configured, its local process stays armed while the review chat handles one input; **verify it instead of starting a second watcher or AI heartbeat**. Queue success is not processing. Reviewer publishes a complete bound report with the three event identity lines specified in the reference, logs under the writer lock, then personally exact-hash acknowledges input. The adapter never acknowledges it; uncertain dispatch/deadline stops notify without automatic resend or exec fallback. Transport notices are not review verdicts. Installation alone does not enable this route.
+
+## Remote Git handoff and provider quota
+
+For different machines, read [GIT_TRANSPORT.md](references/GIT_TRANSPORT.md) and configure the approved remote/role branches with [git.example.json](references/git.example.json). Synchronize immutable complete reports into each machine's own mailbox, then use its existing verified local wakeup. Private cursors, locks, quota state and raw logs stay local; a filesystem lock does not serialize remote writers. Candidate source must separately be available at the exact authorized product SHA. Installing this skill starts no monitor or remote push.
+
+Renewable provider quota exhaustion defaults to local wait and same-task continuation at a reliable reset time, preserving the chosen model. Read [QUOTA_RESUME.md](references/QUOTA_RESUME.md) before enabling unattended continuation. Configure/test the trusted client's structured quota/terminal/checkpoint receipts; absent metadata is a disclosed gate, never a guessed reset or model probe. User pause, explicit budgets, permissions, ambiguous dispatches and billing/capacity errors never auto-resume under this policy. Keep current byte-pinned runs intact; do not silently upgrade their runtime.

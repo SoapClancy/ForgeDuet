@@ -110,3 +110,8 @@ The helper uses short cross-process file locks and atomic writes. One lease per 
 Both roles must put local checks before model invocation: idle polling defaults to 60 seconds and uses no basic or advanced model. Compare peer report paths/content hashes with durable handled acknowledgements, not last observations; unchanged unacknowledged work must survive restart. Completion markers declare readiness, not correctness. A reviewed adapter starts the selected work model only after a claim; verified client background completion can resume an existing role. Native AI timers wake before checking and are permitted only as an explicitly chosen, cost-disclosed fallback. A skill cannot supply a missing desktop wakeup bridge; verify actual client resumption and idle behavior, or disclose the limitation. Stop on same-SHA closure, human gates, agreed budget or user stop; record how to resume. A new session loads rules, authorized task, latest reports, relevant issue records, and exact candidate SHA; it does not need the complete past chat.
 
 Manual claims and script polling use the same state machine. Keep transport logs/raw output ignored. See `TRANSPORT.md` for the concrete schema, operational limits, and recovery. Do not claim provider integration was tested using a synthetic worker.
+
+
+## v0.4 candidate remote and quota extension
+
+For separate hosts, use [GIT_TRANSPORT.md](GIT_TRANSPORT.md); each role's remote records project into its local mailbox without synchronizing mutable relay/cursor state. Renewable provider limits default to model-free reset waiting and same-task continuation under [QUOTA_RESUME.md](QUOTA_RESUME.md), with trusted terminal/checkpoint telemetry. This never lifts user pauses, explicit budgets, permissions or uncertain outcomes.

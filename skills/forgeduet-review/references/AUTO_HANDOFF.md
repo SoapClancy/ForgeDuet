@@ -107,3 +107,8 @@ For reviewer Markdown mailboxes, [MARKDOWN_BRIDGE.md](MARKDOWN_BRIDGE.md) docume
 ## Candidate existing-chat queue alternative
 
 [QUEUE_BRIDGE.md](QUEUE_BRIDGE.md) specifies the reviewer-only local detector/queue adapter. It remains armed during review, so verify that process rather than re-arming a competing watcher. Queue receipt and durable review acknowledgement are separate; no uncertain dispatch is automatically retried. Prepare/install does not resume a project. Busy/archive/sleep/reboot real behavior remains a deployment gate.
+
+
+## Cross-machine and quota modes
+
+For a human-authorized remote run, use [GIT_TRANSPORT.md](GIT_TRANSPORT.md) to project immutable peer records into a local mailbox, then the normal hash/completion/ack detector and verified wakeup. Do not synchronize live cursor/state JSON or pretend a local `.lock/` protects two hosts. Provider quota handling defaults to model-free wait/continuation with the trusted receipts in [QUOTA_RESUME.md](QUOTA_RESUME.md); manual pauses/budgets are separate gates.

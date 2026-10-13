@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "role": "build",
+  "run_id": "replace-with-human-approved-run-id",
+  "remote": "ssh://git@example.invalid/approved-handoff.git",
+  "mailbox": "/absolute/local/project/coordination",
+  "runtime": "/absolute/private/git-runtime",
+  "author": "Human-approved role identity",
+  "email": "role@example.invalid",
+  "interval": 60,
+  "timeout": 30,
+  "max_bytes": 16777216,
+  "desktop_notifications": true
+}

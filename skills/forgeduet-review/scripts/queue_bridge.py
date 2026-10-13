@@ -20,6 +20,7 @@ import uuid
 from handoff import (Cursor, HandoffError, Writer, atomic_json, complete, inside,
                      line, require, root_path, scan, stamp)
 from markdown_bridge import desktop_notice, digest, real_file, disjoint
+from quota import receipt as quota_receipt, ready as quota_ready
 
 
 class QueueBridge:
@@ -30,7 +31,7 @@ class QueueBridge:
         fields = {"schema", "cli", "thread", "model", "effort", "owner", "project_dir",
                   "control_dir", "runtime_dir", "cursor", "instructions", "interval",
                   "queue_timeout_seconds", "ack_timeout_seconds", "desktop_notifications"}
-        require(isinstance(c, dict) and set(c) == fields and type(c["schema"]) is int and
+        require(isinstance(c, dict) and fields <= set(c) and set(c) <= fields | {"quota_status_file", "auto_resume_quota"} and type(c["schema"]) is int and
                 c["schema"] == 1, "Invalid queue config; all fields must be explicit")
         self.cli = real_file(c["cli"])
         require(os.access(self.cli, os.X_OK), "CLI must be executable")
@@ -57,6 +58,13 @@ class QueueBridge:
         self.instructions = real_file(c["instructions"])
         require(not any(p.is_relative_to(tree) for p in (self.config_path, self.instructions)
                         for tree in (self.project, self.control)), "Config/instructions must be outside candidate/control")
+        require(type(c.get("auto_resume_quota", True)) is bool, "auto_resume_quota must be boolean")
+        self.quota_file = None
+        if c.get("quota_status_file"):
+            self.quota_file = Path(c["quota_status_file"])
+            require(self.quota_file.is_absolute() and self.quota_file.resolve()==self.quota_file and
+                    not self.quota_file.is_relative_to(self.project) and not self.quota_file.is_relative_to(self.control),
+                    "Trusted quota telemetry must be outside candidate/control trees")
         self.c = c
         self.pins = {"config": self.config_hash, "cli": digest(self.cli),
                      "instructions": digest(self.instructions)}
@@ -196,6 +204,48 @@ class QueueBridge:
         require(len(found) == 1, "Acknowledgement lacks one unambiguous complete bound review; reconcile")
         return found[0]
 
+    def quota_step(self, state, active):
+        if self.quota_file is None or not self.quota_file.exists():
+            require(not active.get("quota_wait"), "Quota receipt disappeared during wait; reconcile")
+            return None
+        value = json.loads(real_file(str(self.quota_file)).read_text())
+        require(isinstance(value, dict), "Invalid quota telemetry")
+        # A receipt for an older already-handled event does not gate new work.
+        if value.get("event_id") != active["key"]:
+            require(not active.get("quota_wait"), "Quota telemetry replaced during wait")
+            return None
+        q = quota_receipt(value, active["key"], self.c["model"])
+        if q["receipt_id"] in active.get("quota_resumed", []): return None
+        require(q.get("message_id") == active["message_id"], "Quota receipt does not match queued message")
+        require(self.c.get("auto_resume_quota", True), "Automatic quota resume disabled")
+        if active.get("quota_wait"):
+            require(active["quota_wait"]==q, "Quota receipt changed during wait; emit a new receipt after a new terminal attempt")
+        else:
+            active["quota_wait"] = q
+            self.save(state)
+        if not quota_ready(q):
+            return {"status":"waiting_quota", "key":active["key"], "resumes_at":q["resets_at"]+2}
+        run=self.runtime/("resume-"+active["key"]+"-"+str(len(active.get("quota_resumed", []))+1))
+        active["status"]="dispatching"
+        active.setdefault("quota_resumed", []).append(q["receipt_id"])
+        self.save(state)  # Intent before queue; crash/unknown outcome still NEVER resends.
+        try:
+            run.mkdir(mode=0o700)
+            message=("ForgeDuet：已等待客户端报告的额度重置时间。继续同一任务，先核对已有完整报告和游标，"
+                     "若已经发布则只补未完成确认，不重复测试/发布；从现有检查点继续，不重做已完成副作用。\n"+
+                     self.message(active["event"],active["key"]))
+            (run/"message.txt").write_text(message)
+            command=[str(self.cli),"queue","--thread",self.c["thread"],"--message",message,"--model",self.c["model"],
+                     "-c","model_reasoning_effort="+json.dumps(self.c["effort"]),"--sandbox","workspace-write"]
+            atomic_json(run/"command.json",command)
+            message_id=self.invoke(command,run)
+            active.setdefault("quota_history",[]).append(q)
+            active.update(status="submitted", message_id=message_id, submitted_epoch=time.time(), run_dir=str(run))
+            active.pop("quota_wait",None);self.save(state)
+            return {"status":"submitted", "continuation":True,"key":active["key"],"message_id":message_id}
+        except BaseException as exc:
+            active.update(status="uncertain",error=str(exc));self.save(state);raise
+
     def step(self):
         self.validate()
         state = self.load()
@@ -216,6 +266,8 @@ class QueueBridge:
                 state["active"] = None
                 self.save(state)
                 return {"status": "handled", "key": active["key"], "report": active["report"]}
+            quota = self.quota_step(state, active)
+            if quota is not None: return quota
             age = time.time() - active["submitted_epoch"]
             require(age >= 0, "Clock moved backwards; reconcile acknowledgement deadline")
             if age >= self.c["ack_timeout_seconds"]:

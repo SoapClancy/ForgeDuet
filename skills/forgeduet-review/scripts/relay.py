@@ -20,8 +20,10 @@ import tempfile
 import time
 import uuid
 
+from quota import receipt as quota_receipt, ready as quota_ready, QuotaError
+
 VERSION = 2
-RELAY_VERSION = "0.3.0"
+RELAY_VERSION = "0.4.0"
 RUNTIME_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 ROLES = ("build", "review")
 KINDS = {
@@ -131,6 +133,7 @@ def validate_config(cfg):
     require(isinstance(cfg, dict) and cfg.get("schema_version") == VERSION, "Unsupported configuration version")
     require(cfg.get("setup_confirmed") is True and bool(cfg.get("authorization_source")),
             "Record actual human choices and authority before init")
+    require(type(cfg.get("auto_resume_quota", True)) is bool, "auto_resume_quota must be boolean")
     root = absolute_dir(cfg.get("project_root"), "project_root")
     require(isinstance(cfg.get("report_language"), str) and bool(cfg["report_language"].strip()),
             "Choose the report/handoff language explicitly")
@@ -252,7 +255,7 @@ class Mailbox:
         for ident, job in state["jobs"].items():
             require(isinstance(job, dict) and job.get("id") == ident
                     and re.fullmatch(r"[0-9a-f]{32}", ident)
-                    and job.get("status") in ("pending", "active", "done", "obsolete")
+                    and job.get("status") in ("pending", "active", "done", "obsolete", "waiting_quota")
                     and job.get("recipient") in (*ROLES, "human")
                     and {"message_hash", "claim", "completion"}.issubset(job), "Invalid job state")
             if job["status"] == "active":
@@ -302,6 +305,10 @@ class Mailbox:
         if state["phase"] != "working":
             return
         for job in state["jobs"].values():
+            if job["status"] == "waiting_quota":
+                q = quota_receipt(job["quota"], job["id"], state["config"]["roles"][job["recipient"]]["model"], now)
+                if quota_ready(q, now):
+                    job["status"] = "pending"
             if job["status"] == "active" and now >= job["claim"]["expires_at"]:
                 state["unknown_usage"]["tokens"] = state["unknown_usage"]["usd"] = True
                 self.stop(state, "Lease expired for {}; verify the old worker stopped before recovery".format(job["id"]))
@@ -426,7 +433,7 @@ class Mailbox:
             if state["phase"] != "working" or state["dispatch_hold"]:
                 self.save(state)
                 return None
-            if any(j["status"] == "active" and j["recipient"] == role for j in state["jobs"].values()):
+            if any(j["status"] in ("active", "waiting_quota") and j["recipient"] == role for j in state["jobs"].values()):
                 return None
             for job in state["jobs"].values():
                 if job["status"] == "pending" and job["recipient"] == role:
@@ -455,6 +462,7 @@ class Mailbox:
                                "message": message, "context_messages": context,
                                "rules_history": state["rules_history"], "claim": claim, "role": role,
                                "settings": state["config"]["roles"][role],
+                               "quota_continuation": job.get("quota"),
                                "project_root": state["config"]["project_root"],
                                "rules_file": state["config"]["rules_file"],
                                "rules_hash": state["rules_hash"],
@@ -582,6 +590,28 @@ class Mailbox:
                 self.stop(state, reason)
             self.save(state)
             return outgoing["id"]
+
+    def defer_quota(self, ident, token, result):
+        """Called only after a trusted adapter process has exited; never expire a live worker."""
+        with self.lock():
+            state = self.load()
+            job = self.active(state, ident, token, time.time())
+            q = quota_receipt(result, ident, state["config"]["roles"][job["recipient"]]["model"])
+            require(state["config"].get("auto_resume_quota", True) is True, "Automatic quota resume disabled")
+            history = job.setdefault("quota_history", [])
+            require(q["receipt_id"] not in [r["receipt_id"] for r in history], "Repeated quota receipt; reconcile adapter")
+            usage = q.get("usage", {})
+            for field in ("tokens", "usd"):
+                value = usage.get(field)
+                require(value is None or (type(value) in (int,float) and math.isfinite(value) and value >= 0), "Invalid quota usage")
+                if value is None: state["unknown_usage"][field] = True
+                else: state["usage"][field] += value
+            history.append(q)
+            job.update(status="waiting_quota", quota=q, claim=None)
+            reason = self.budget_reason(state, time.time())
+            if reason: self.stop(state, reason)
+            self.save(state)
+            return {"status": "waiting_quota" if state["phase"]=="working" else "needs_human", "resumes_at":q["resets_at"]+2}
 
     def fail(self, ident, token, reason, usage_unknown=True):
         with self.lock():
@@ -733,6 +763,11 @@ def run_claim(box, role, claim):
                     reason = box.budget_reason(state, now)
                 require(reason is None, reason or "Budget reached")
                 time.sleep(1)
+        if process.returncode in (0, 75) and result_path.is_file():
+            result = read_json(result_path)
+            if isinstance(result, dict) and result.get("status") == "quota_exhausted":
+                box.defer_quota(claim["id"], claim["token"], result)
+                return
         require(process.returncode == 0, "Adapter exited {} (see private log {})".format(process.returncode, log_path))
         box.finish(claim["id"], claim["token"], read_json(result_path))
     except BaseException as exc:

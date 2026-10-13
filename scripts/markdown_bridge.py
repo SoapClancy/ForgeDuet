@@ -15,6 +15,8 @@ import uuid
 from handoff import (Cursor, HandoffError, Writer, atomic_json, complete, inside,
                      line, require, root_path, scan, stamp)
 
+from quota import receipt as quota_receipt, ready as quota_ready, before_work_jsonl, QuotaDeferred
+
 SCHEMA = {
     "type": "object", "additionalProperties": False,
     "properties": {"input_path": {"type": "string"},
@@ -94,7 +96,8 @@ class Bridge:
         require(isinstance(c, dict) and type(c.get("schema")) is int and c["schema"] == 1, "Invalid bridge config")
         keys = {"schema", "cli", "model", "effort", "owner", "project_dir", "control_dir",
                 "runtime_dir", "cursor", "instructions", "state_file", "interval", "timeout_seconds"}
-        require(set(c) in (keys, keys | {"desktop_notifications"}), "Unexpected/missing config fields; no implicit model or path defaults")
+        require(keys <= set(c) and set(c) <= keys | {"desktop_notifications", "auto_resume_quota"}, "Unexpected/missing config fields; no implicit model or path defaults")
+        require(type(c.get("auto_resume_quota", True)) is bool, "auto_resume_quota must be boolean")
         c.setdefault("desktop_notifications", True)
         require(type(c["desktop_notifications"]) is bool, "desktop_notifications must be boolean")
         self.cli = real_file(c["cli"])
@@ -145,7 +148,7 @@ class Bridge:
         value = json.loads(self.journal.read_text())
         require(isinstance(value, dict) and value.get("schema") == 1 and
                 value.get("cursor") == str(self.cursor.path) and value.get("status") in
-                ("running", "failed", "ready", "published", "handled", "reconciled"),
+                ("running", "failed", "ready", "published", "handled", "reconciled", "waiting_quota"),
                 "Invalid/wrong-run journal; retain for reconciliation")
         return value
 
@@ -183,6 +186,9 @@ class Bridge:
                     timeout = self.c["timeout_seconds"]
                     require(time.monotonic() - started < timeout, "CLI timeout")
                     time.sleep(0.1)
+                if process.returncode != 0 and self.c.get("auto_resume_quota", True):
+                    q = before_work_jsonl(run / "stdout.jsonl", attempt["event"]["sha256"], self.c["model"])
+                    if q is not None: raise QuotaDeferred(q)
                 require(process.returncode == 0, "CLI failed; inspect private logs")
             finally:
                 if process is not None and process.poll() is None:
@@ -275,6 +281,11 @@ class Bridge:
             atomic_json(run / "attempt.json", attempt)
             return {"status": "paused" if result["action"] == "stop" else "handled",
                     "report": publication, "usage": attempt["usage"], "run_dir": str(run)}
+        except QuotaDeferred as exc:
+            attempt.update(status="waiting_quota", quota=exc.receipt, usage=usage(run / "stdout.jsonl"))
+            self.save(attempt)
+            atomic_json(run / "attempt.json", attempt)
+            return {"status":"waiting_quota", "resumes_at":exc.receipt["resets_at"]+2, "run_dir":str(run)}
         except BaseException as exc:
             attempt.update(status="failed", error=str(exc), failed_at=stamp(), usage=usage(run / "stdout.jsonl"))
             secondary = []
@@ -399,7 +410,7 @@ class Bridge:
         with self.cursor.guard(".bridge", nonblock=True), self.cursor.guard(".watcher", nonblock=True):
             self._owns_watch = True
             previous = self.previous()
-            if previous and previous["status"] not in ("handled", "reconciled"):
+            if previous and previous["status"] not in ("handled", "reconciled", "waiting_quota"):
                 return {"status": "needs_recovery", "run_dir": previous["run_dir"]}
             while True:
                 check = self.cursor.check(self.c["interval"])
@@ -407,8 +418,22 @@ class Bridge:
                     if check["status"] == "error":
                         self.cursor.control(True, "Repeated local scan failure; inspect last_scan_error")
                     return check
-                if check["events"]:
-                    outcome = self.dispatch(check["events"][0])
+                previous = self.previous()
+                if previous and previous["status"] == "waiting_quota":
+                    self.validate_event(previous["event"])
+                    require(digest(self.state_file) == previous["context"]["state_sha256"], "State changed during quota wait")
+                    q = quota_receipt(previous["quota"], previous["event"]["sha256"], self.c["model"])
+                    if not quota_ready(q):
+                        if once: return {"status":"waiting_quota", "resumes_at":q["resets_at"]+2}
+                        time.sleep(self.c["interval"])
+                        continue
+                    require(any(e["path"]==previous["event"]["path"] and e["sha256"]==previous["event"]["sha256"] for e in check["events"]), "Quota input already acknowledged elsewhere; reconcile")
+                    event = previous["event"]
+                elif check["events"]:
+                    event = check["events"][0]
+                else: event = None
+                if event:
+                    outcome = self.dispatch(event)
                     if once or outcome["status"] == "paused":
                         return outcome
                     print(json.dumps(outcome, ensure_ascii=False), flush=True)

@@ -2,7 +2,7 @@
 
 No feature below is a promise of automatic implementation. Add future changes through an authorized task and normal paired review.
 
-Current workflow instructions: **v0.3.2**. Relay runtime remains **0.3.0**; documentation revisions do not migrate runtime state.
+Current candidate workflow instructions and relay runtime: **v0.4.0**. This feature branch adds Git handoff and structured quota continuation; old byte-pinned runs are not migrated.
 
 | Item | Current behavior | Possible follow-up |
 | --- | --- | --- |
@@ -24,3 +24,8 @@ The remaining v0.2.1 P3s about local-commit permissions, explicit approved build
 Optional snapshot follow-up: include the raw commit object and reconstruct the Git tree so an expected commit ID can directly verify the exported source without Git. Keep the current independently supplied ZIP SHA-256 check until a separately tested/reviewed format supports this. Do not replace it with trusting the ZIP comment or manifest.
 
 Queue adapter 0.1 candidate: local detector → existing Codex reviewer chat; fake integration tests only. Underlying idle-chat queue smoke passed, but busy/archive/sleep/reboot and real adapter deployment require separate authorization/validation. Keep exec alternative and installed/project pauses unchanged.
+
+
+## v0.4 candidate scope
+
+Git synchronization now supports two role-owned remote branches, complete immutable reports, public regressions, manifest/hash/ancestry checks and recoverable transfer intents; private runtime remains local. Provider quota defaults to local wait/same-task continuation for validated terminal/reset receipts in both relay roles, queue and the pre-work exec path. 202 synthetic tests passed; independent review and real SSH/HTTPS/client quota-telemetry trials remain pending. No universal Codex/Claude telemetry observer is shipped; unsupported reset/terminal metadata is a gate. See [Git mode](../protocol/GIT_TRANSPORT.md) and [quota mode](../protocol/QUOTA_RESUME.md).

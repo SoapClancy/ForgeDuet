@@ -85,3 +85,8 @@ No notification generation calls a model. **If Claude's watcher wakes Claude to 
 ## Second-stage real smoke gate — still not authorized
 
 The later separately authorized tiny real Codex call must execute at least one actual test command inside a fixed synthetic snapshot, not merely produce review prose. Prefer a minimal local Swift package for a Swift project, with scratch/build/cache paths contained in the control workspace and no dependency downloads. Retain command, exit status, stdout/stderr, sandbox permission/network limitations and JSONL usage. A denied or unavailable test is a failed/limited gate, never a passed test; do not bypass the sandbox or touch devices to make it pass. Confirm any required extra paths/network permissions with the human before use. Successful synthetic Swift execution would not by itself prove the full WristFiles toolchain, simulators or Release build will work. Do not start a historical quality benchmark until actual testing ability and trustworthy usage measurement are established.
+
+
+## Candidate pre-work quota wait
+
+See [QUOTA_RESUME.md](QUOTA_RESUME.md). Default-on continuation is restricted to typed quota failure before any item/tool output; partial work, unknown reset or changed state stays gated. Historical v0.2 evidence does not validate this new path.

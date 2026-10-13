@@ -107,3 +107,8 @@ The executable bytes, trusted instructions and config are pinned, not merely the
 4. Once **all old attempted inputs are durably reconciled and handled**, no old child/turn is active, and the human authorizes migration, retain the old ledger as immutable evidence. Prepare a new private runtime/config for the reviewed new identities, using the **same preserved cursor/ack history**, record old/new hashes and evidence paths, then explicitly resume one detector. The code has no automatic pin-migration command. recover with a changed identity is not expected to override the old pins; do not hand-edit queue.json or delete old state. If unfinished/abandoned attempted inputs must carry across, a separately reviewed migration policy/tool is needed first, rather than this all-handled procedure.
 
 Before real use, synchronize the compatible source bundles to the actual role skill installations under authorization and verify hashes/links. The reviewer must verify the queue detector already owning .watcher instead of launching a second watcher. Builder installations also need to recognize transport notices. Updating installed skills does not resume project monitoring. For a disposable smoke, the explicitly configured trusted smoke guide can establish these rules without changing global installed skills; record that distinction honestly.
+
+
+## Candidate quota continuation extension
+
+The optional trusted `quota_status_file` and default-on `auto_resume_quota` policy are described in [QUOTA_RESUME.md](QUOTA_RESUME.md). Only an ended quota-limited turn with a reliable reset and matching message/event may trigger one recorded same-chat continuation. Unknown queue outcomes keep their no-resend rule. This does not claim a universal real-provider telemetry observer.

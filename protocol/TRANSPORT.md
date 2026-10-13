@@ -1,4 +1,4 @@
-# Local CLI relay and adapter contract v0.3.0
+# Local CLI relay and adapter contract v0.4.0 candidate
 
 Automatic handoff during a user-started local run is required by default, but this particular CLI relay is optional: native client monitors can use [AUTO_HANDOFF.md](AUTO_HANDOFF.md). Choose one dispatcher per role/task. This relay is local coordination, not a permissions broker. Python 3.9+, macOS/Linux, local filesystem only. Both installed skills must contain the same relay bytes/version. Explicit browser/manual fallback uses [MANUAL.md](MANUAL.md) and [SNAPSHOTS.md](SNAPSHOTS.md), not the local HEAD gate below. Skill preparation alone must not start a watcher.
 
@@ -127,3 +127,8 @@ python3 relay.py adopt-rules --mailbox /absolute/.forgeduet \
 For immediate permission revocation, explicitly `pause`; a mere file edit intentionally lets the old-grant task drain. If paused with an active owner, verify it stopped and `recover` it first (the rules hold still prevents dispatch), then adopt/resume. This prevents either a recovery deadlock or silently running under an unaccepted rule change.
 
 `pause --human-note ...` stops dispatch. A running poller terminates its own adapter; manual workers must observe the pause and stop themselves. `status` shows phase/reason, SHA approvals, usage, and job claims. When a paused run has an active claim, use verified-owner recovery before a normal resume. If an adapter failed after modifying product files, inspect those changes before retrying; the relay cannot make arbitrary product edits idempotent.
+
+
+## v0.4 candidate: renewable provider quota
+
+The relay supports both roles' structured terminal quota results and persistent waiting_quota jobs. See [QUOTA_RESUME.md](QUOTA_RESUME.md) for default policy, source/usage/reset/continuation contract, safety gates and unchanged selected models. Byte/version mismatch still rejects an older live run; no automatic state migration. The typed relay itself remains a local single-host state machine; use the Markdown [Git transport](GIT_TRANSPORT.md) for cross-machine records, never share live relay state through Git.
