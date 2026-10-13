@@ -67,3 +67,5 @@
 2026-10-13T22:54:44+01:00 | ChatGPT / git transport and quota resume | published docs/deliveries/2026-10-13-git-sync-round-03.md sha256=5354673739c81acb5f7d8bf8a5c81378191acb33d7973b2b458f12fdae19926e
 2026-10-13T22:54:44+01:00 | ChatGPT / git transport and quota resume | Publish immutable round-3 delivery binding 85a655f, source archive, 232-test evidence and desktop/cross-host limitations; request independent rereview.
 2026-10-13T22:55:21+01:00 | ChatGPT / git transport and quota resume | Prepare local record-only commit of immutable round-3 delivery and append-only log; candidate remains 85a655fe73d9370535f14b94986d082b66ec8af7; no push/merge/install.
+2026-10-13T23:00:40+01:00 | ChatGPT / git transport and quota resume | published docs/deliveries/2026-10-13-git-round-03-accepted.md sha256=9cd22f9c6e109a3c57d39171f9c44544c6ba7bcb8cd6c8e48387f40b56ff4f14
+2026-10-13T23:00:40+01:00 | ChatGPT / git transport and quota resume | Accept exact round-3 SHA 85a655fe73d9370535f14b94986d082b66ec8af7 within synthetic scope; record deferred FD-GIT-P3-003 and unchanged integration/quota limits; prepare local record-only commit.

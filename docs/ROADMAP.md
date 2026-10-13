@@ -39,6 +39,13 @@ Git synchronization now supports two role-owned remote branches, complete immuta
 Both are explicit remaining parts of the user's requested desktop goal, not claimed as P3-complete or covered by fake-client tests. Investigations and real-client experiments must preserve project/model/budget/permission authorization and report unsupported client capabilities honestly.
 
 
-## Git round-3 follow-up (awaiting independent review)
+## Git round-3 follow-up (approved in synthetic scope)
 
 The round-2 approved candidate 8096fd2 is accepted only in its recorded synthetic scope. This follow-up changes the default to notify-and-continue through long outages; the explicit stop policy remains optional. Outage/recovery receipts stay private and do not wake either model. Common HTTPS transient signatures were added with fatal authentication/certificate/integrity precedence. Old runtime retry identities are not silently migrated. Real SSH/HTTPS, two-host lifecycle and the desktop quota tasks above remain open; source tests do not close them.
+
+
+Author: ChatGPT. Recorded: 2026-10-13T23:00:40+01:00
+
+Round-3 closure: Claude approved full candidate 85a655fe73d9370535f14b94986d082b66ec8af7 after reporting 232/232 independent tests, and build accepts the same SHA and archive in [the acceptance record](deliveries/2026-10-13-git-round-03-accepted.md). No runtime/test changes follow that candidate.
+
+**FD-GIT-P3-003 (deferred, nonblocking):** the broad permanent-error substring `corrupt` can conservatively stop synchronization for an unrelated temporary server/proxy error page containing that word. Keep the safe stop; reconsider only with an observed redacted diagnostic and a regression preserving genuine integrity failure precedence. Real GitHub/two-host/lifecycle validation and FD-QUOTA-DESKTOP-001/002 remain open. This closes the reviewed Git synthetic round, not those integration tasks; no push, merge, installation or project activation follows from acceptance.
