@@ -17,7 +17,7 @@ import subprocess
 import time
 from urllib.parse import urlsplit, unquote
 
-from handoff import Writer, HandoffError, atomic_json, complete, inside, require, root_path
+from handoff import Writer, HandoffError, atomic_json, complete, inside, require, root_path, stamp
 from markdown_bridge import desktop_notice
 
 OWN = {'build': {'deliveries'}, 'review': {'reviews', 'review-tests'}}
@@ -42,12 +42,14 @@ class GitTransport:
         self.config = Path(config).resolve(strict=True)
         c = json.loads(self.config.read_text())
         required = {'schema', 'role', 'run_id', 'remote', 'mailbox', 'runtime', 'author', 'email'}
-        require(isinstance(c, dict) and set(c) <= required | {'interval', 'timeout', 'max_bytes', 'desktop_notifications', 'max_network_errors', 'retry_max_seconds'} and required <= set(c), 'Invalid Git transport config')
+        require(isinstance(c, dict) and set(c) <= required | {'interval', 'timeout', 'max_bytes', 'desktop_notifications', 'max_network_errors', 'retry_max_seconds', 'network_failure_policy'} and required <= set(c), 'Invalid Git transport config')
         require(type(c['schema']) is int and c['schema'] == 1 and c['role'] in OWN and isinstance(c['run_id'],str) and re.fullmatch(r'[A-Za-z0-9_-]{1,80}', c['run_id']), 'Invalid role/run ID')
         for field in ('remote', 'author', 'email'):
             require(isinstance(c[field], str) and c[field] and '\n' not in c[field] and not c[field].startswith('-'), 'Invalid '+field)
         c.setdefault('desktop_notifications', True)
         require(type(c['desktop_notifications']) is bool, 'Expected boolean desktop_notifications')
+        c.setdefault('network_failure_policy', 'notify_continue')
+        require(c['network_failure_policy'] in ('notify_continue', 'stop'), 'Invalid network_failure_policy')
         remote = c['remote']
         if remote.startswith('https://'):
             require(urlsplit(remote).username is None and urlsplit(remote).password is None, 'Use credential helpers, not credentials embedded in remote URL')
@@ -63,7 +65,8 @@ class GitTransport:
         require(not self.config.is_relative_to(self.root), 'Trusted config must be outside mailbox')
         self.store = self.runtime / 'objects.git'
         self.journal = self.runtime / 'git-transport.json'
-        self.identity = {'config_sha256': sha(self.config.read_bytes()), 'config': str(self.config)}
+        self.identity = {'config_sha256': sha(self.config.read_bytes()), 'config': str(self.config),
+                         'retry_policy': {'version': 2, 'mode': c['network_failure_policy']}}
         self.branch = 'refs/heads/forgeduet/'+c['run_id']+'/'+c['role']
         peer = 'review' if c['role'] == 'build' else 'build'
         self.peer = peer
@@ -73,8 +76,15 @@ class GitTransport:
         text = diagnostics.lower()
         permanent = ('authentication failed', 'permission denied', 'access denied',
                      'could not read username', 'non-fast-forward', '[rejected]',
-                     '[remote rejected]', 'repository not found', 'http 401', 'http 403')
-        if any(item in text for item in permanent):
+                     '[remote rejected]', 'repository not found', 'certificate verify failed',
+                     'ssl certificate problem', 'server certificate verification failed',
+                     'host key verification failed', 'remote host identification has changed',
+                     'bad object', 'corrupt', 'checksum mismatch', 'hash mismatch',
+                     'unpack failed', 'no space left on device', 'not a git repository',
+                     'ssl peer certificate', 'curl 60 ', 'curl 77 ',
+                     'unsupported protocol', 'unable to update url base from redirection')
+        status = r'(?:http(?:/[0-9.]+)?\s+|returned error:\s*)(401|403|407)\b'
+        if any(item in text for item in permanent) or re.search(status, text):
             return False
         remote = self.c['remote']
         path = (Path(remote) if remote.startswith('/') else
@@ -86,8 +96,9 @@ class GitTransport:
             'could not resolve host', 'could not resolve hostname', 'temporary failure in name resolution',
             'failed to connect', 'connection refused', 'connection timed out', 'connection reset',
             'connection closed', 'network is unreachable', 'no route to host', 'remote end hung up',
-            'early eof', 'http 502', 'http 503', 'http 504', 'returned error: 502',
-            'returned error: 503', 'returned error: 504', 'operation timed out'))
+            'early eof', 'ssl_error_syscall', 'rpc failed', 'unexpected disconnect',
+            'operation timed out')) or bool(re.search(
+                r'(?:http(?:/[0-9.]+)?\s+|returned error:\s*)(429|500|502|503|504)\b', text))
 
     def git(self, *args, data=None, ok=(0,)):
         env = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
@@ -104,9 +115,11 @@ class GitTransport:
                 raise RetryableGitError('Remote Git operation timed out; retain transfer intent: '+args[0]) from exc
             raise
         if p.returncode not in ok:
-            detail = p.stderr.decode(errors='replace')[:800]
-            error = RetryableGitError if network and self.transient(detail) else HandoffError
-            raise error('Git operation failed; retain state: '+detail)
+            # Porcelain push rejection can be on stdout. Classify before truncation
+            # so a later permanent diagnostic wins over an earlier RPC message.
+            diagnostics = (p.stderr+b'\n'+p.stdout).decode(errors='replace')
+            error = RetryableGitError if network and self.transient(diagnostics) else HandoffError
+            raise error('Git operation failed; retain state: '+diagnostics[:800])
         return p.stdout
 
     @contextlib.contextmanager
@@ -342,6 +355,39 @@ class GitTransport:
                     'Invalid retry clock')
         return value
 
+    def network_status(self, event, retry):
+        """Private informational receipt; never an input report or model wakeup.
+
+        Persist the OS-attempt intent first. A crash leaves an uncertain receipt,
+        which is not retried automatically (at most one OS attempt per event).
+        Notification failure must not interrupt recoverable network work.
+        """
+        path=self.runtime/('network-status-'+event+'-'+str(retry['incident'])+'.json')
+        try:
+            require(event in ('outage','recovered') and not path.is_symlink(), 'Invalid network status path')
+            if path.exists():
+                old=json.loads(path.read_text())
+                require(isinstance(old,dict) and old.get('schema')==1 and old.get('identity')==self.identity and
+                        old.get('event')==event and old.get('incident')==retry['incident'] and
+                        old.get('record_type')=='transport_status' and old.get('paused') is False and
+                        isinstance(old.get('desktop'),dict),
+                        'Conflicting network status receipt; preserve it')
+                return old
+            value={'schema':1,'identity':self.identity,'event':event,'incident':retry['incident'],
+                   'record_type':'transport_status','transport_scope':'local','at':stamp(),
+                   'consecutive_errors':retry['consecutive_errors'],'paused':False,'model_calls':0,
+                   'desktop':{'status':'pending' if self.c['desktop_notifications'] else 'disabled'}}
+            atomic_json(path,value)
+            if self.c['desktop_notifications']:
+                message=('ForgeDuet 网络暂不可用；继续本地重试，不需要重启。' if event=='outage' else
+                         'ForgeDuet 网络已恢复，Git 交接已自动接上。')
+                try:value['desktop']=desktop_notice(message)
+                except Exception as exc:value['desktop']={'status':'failed','error':str(exc)}
+                atomic_json(path,value)
+            return value
+        except (HandoffError,OSError,ValueError) as exc:
+            return {'event':event,'notification_error':str(exc),'paused':False,'model_calls':0}
+
     def resume(self):
         # Explicit operator action; does not change the Git journal or any input ack.
         with self.guard():
@@ -366,17 +412,24 @@ class GitTransport:
                 count=retry['consecutive_errors']+1
                 if count==1:retry['incident']+=1
                 delay=max(self.c['interval'],min(self.c['interval']*2**min(count-1,20),self.c['retry_max_seconds']))
+                threshold=count>=self.c['max_network_errors']
+                if threshold:delay=max(self.c['interval'],self.c['retry_max_seconds'])
                 at=time.time()
                 retry.update(consecutive_errors=count,last_error_at=at,next_retry_at=at+delay,
-                             stopped=count>=self.c['max_network_errors'])
+                             stopped=threshold and self.c['network_failure_policy']=='stop')
                 retry['history'].append({'error':str(exc),'at':at,'next_retry_at':at+delay})
+                retry['history']=retry['history'][-100:]  # Continuous outages must not grow state without bound.
                 if retry['stopped']:
                     retry['stop_reason']='Consecutive network failures reached the configured limit; inspect and resume. '+str(exc)
                 atomic_json(self.runtime/'network-retry.json',retry)
                 if retry['stopped']:
                     raise HandoffError(retry['stop_reason']) from exc
-                return {'status':'retrying','error':str(exc),'consecutive_errors':count,
+                result={'status':'retrying','error':str(exc),'consecutive_errors':count,
                         'next_retry_at':at+delay,'model_calls':0}
+                if threshold:result['network_status']=self.network_status('outage',retry)
+                return result
+            if retry['consecutive_errors']>=self.c['max_network_errors']:
+                result['network_status']=self.network_status('recovered',retry)
             retry.update(consecutive_errors=0,next_retry_at=None,stopped=False)
             retry.pop('last_error_at',None);retry.pop('stop_reason',None)
             atomic_json(self.runtime/'network-retry.json',retry)

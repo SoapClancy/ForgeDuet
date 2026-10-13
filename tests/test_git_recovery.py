@@ -67,6 +67,8 @@ class RecoveryTests(unittest.TestCase):
         self.review.sync();self.assertTrue((self.review.root/'deliveries/round-1.md').exists())
 
     def test_network_retry_limit_survives_restart(self):
+        c=json.loads(self.build.config.read_text());c['network_failure_policy']='stop'
+        self.build.config.write_text(json.dumps(c));self.build=gt.GitTransport(self.build.config)
         self.remote.rename(self.offline);last=None
         for number in range(1,5):
             if last:
@@ -156,7 +158,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(list((self.build.root/'reviews').glob('git-transport-*.md')),[])
 
     def test_exhausted_watch_stops_notifies_once_and_requires_resume(self):
-        c=json.loads(self.build.config.read_text());c.update(interval=1,max_network_errors=2,retry_max_seconds=1,desktop_notifications=False)
+        c=json.loads(self.build.config.read_text());c.update(interval=1,max_network_errors=2,retry_max_seconds=1,desktop_notifications=False,network_failure_policy='stop')
         self.build.config.write_text(json.dumps(c));self.remote.rename(self.offline)
         command=[sys.executable,gt.__file__,'watch','--config',str(self.build.config)]
         first=subprocess.run(command,text=True,capture_output=True,timeout=5)

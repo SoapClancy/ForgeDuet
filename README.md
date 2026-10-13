@@ -4,6 +4,8 @@ Workflow instructions **v0.4.0 candidate** · relay runtime **0.4.0 candidate**.
 
 **Quota integration limit:** the current Claude Code desktop build + Codex App/queue review pairing does **not** automatically continue after a token limit resets. No real desktop quota observer/reset-wakeup bridge is bundled. Conditional CLI/queue policy and synthetic tests exist; see [mode availability](protocol/QUOTA_RESUME.md).
 
+Git handoff defaults to continuing local retries through long connectivity outages, with one outage alert and a recovery record. Authentication/integrity gates still stop. See [Git policy and setup limits](protocol/GIT_TRANSPORT.md).
+
 **Two AI roles, one auditable engineering loop.** One implements and tests; the other reviews the exact commit and tests independently. Humans set scope, choose the models, and resolve decisions that need human judgment.
 
 ForgeDuet packages a workflow learned from repeated development, independent review, and real-device testing. It works with different model providers; the roles are deliberately separate even when both use the same provider. Two agreeing models are not proof of correctness. Reproducible evidence is the acceptance criterion.

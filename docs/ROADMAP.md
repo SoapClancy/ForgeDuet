@@ -37,3 +37,8 @@ Git synchronization now supports two role-owned remote branches, complete immuta
 - **FD-QUOTA-DESKTOP-002 — Claude Code desktop:** investigate reliable ended-session/quota/reset telemetry and a verified local reset-to-session-wakeup path; `handoff.py watch` observes reviews, not account limits. No automatic quota continuation currently exists for this mode.
 
 Both are explicit remaining parts of the user's requested desktop goal, not claimed as P3-complete or covered by fake-client tests. Investigations and real-client experiments must preserve project/model/budget/permission authorization and report unsupported client capabilities honestly.
+
+
+## Git round-3 follow-up (awaiting independent review)
+
+The round-2 approved candidate 8096fd2 is accepted only in its recorded synthetic scope. This follow-up changes the default to notify-and-continue through long outages; the explicit stop policy remains optional. Outage/recovery receipts stay private and do not wake either model. Common HTTPS transient signatures were added with fatal authentication/certificate/integrity precedence. Old runtime retry identities are not silently migrated. Real SSH/HTTPS, two-host lifecycle and the desktop quota tasks above remain open; source tests do not close them.

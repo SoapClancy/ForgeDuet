@@ -12,5 +12,6 @@
   "max_bytes": 16777216,
   "desktop_notifications": true,
   "max_network_errors": 5,
-  "retry_max_seconds": 300
+  "retry_max_seconds": 300,
+  "network_failure_policy": "notify_continue"
 }
