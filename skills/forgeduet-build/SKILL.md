@@ -1,6 +1,6 @@
 ---
 name: forgeduet-build
-description: Implement and test changes as the ForgeDuet builder or build role, preserving independent regressions and handing exact versions to a separate reviewer. Use when the user requests ForgeDuet or its paired build/review workflow.
+description: Implement and test changes as the ForgeDuet builder or build role, preserving independent regressions and handing exact versions to a separate reviewer. Use when the user requests ForgeDuet or its paired build/review workflow. Peer coordination stays in ForgeDuet records, never direct control of the peer AI UI.
 ---
 
 # ForgeDuet — build and test
@@ -8,6 +8,14 @@ description: Implement and test changes as the ForgeDuet builder or build role, 
 Workflow instructions v0.4.0 candidate; relay runtime 0.4.0 candidate. These are separate version tracks.
 
 You own implementation and self-tests. A separate reviewer reads the exact commit and verifies independently. Deliver a concrete tested change; agreement alone is not an acceptance gate.
+
+## Peer coordination boundary
+
+**Coordinate through the ForgeDuet skill and its shared reports, acknowledgements and selected transport. Never use computer-use, native-app automation or browser automation to open, inspect, focus, type into, log in to, or otherwise control Claude, ChatGPT or another peer AI client for handoff.** This includes a read-only status inspection or a supposed wake-up workaround. Starting ForgeDuet does not authorize controlling the other client.
+
+Before any CLI preflight, login request, new role session or transport change, inspect the current project's actual shared root, both roles' reports, cursors and watcher records, including ignored runtime directories. Reconcile which root the peer is receiving; do not overlook an existing report or create a competing receiver. Read [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md) for peer discovery.
+
+An existing native Claude Code session can receive and answer ForgeDuet files without a separate Claude CLI login. An unselected CLI's logged-out state is not a blocker for that file route. A CLI relay is an alternative only when explicitly selected for this run; earlier permission in another task does not select it now. If the actual selected route is unavailable, retain the handoff and publish a transport notice or explain the specific missing capability. Do not substitute peer-UI control.
 
 ## Enter or resume
 
@@ -48,7 +56,7 @@ For local Markdown locking, publication and polling use [AUTO_HANDOFF.md](refere
 
 Inspect watcher JSON, not just its exit: `attention/unmarked_record` requests transport repair, not code review; durably handle it before separate `ack-warning`. A warning never acknowledges the delivery. One failed scan retries locally; persistent errors retain diagnostics and stop rather than pretend to finish. Both roles use the same reviewed helper, never an old token-unaware unlock tool.
 
-Own build reports, product changes, and adopted tests. Read counterpart reports/tests; correct originals with a superseding record. Stop and record why on same-SHA closure, a required human decision, exhausted agreed budget, or user stop. Re-arm after the human resumes or authorizes a new task; never close a newly reopened monitor because an old task already finished. Browser/upload or human-courier handoff is an explicit fallback, not the silent default. If automatic wakeup is unavailable, say so during setup and resolve it with the human; do not label a sleeping loop automatic. See [MANUAL.md](references/MANUAL.md).
+Own build reports, product changes, and adopted tests. Read counterpart reports/tests; correct originals with a superseding record. Stop and record why on same-SHA closure, a required human decision, exhausted agreed budget, or user stop. Re-arm after the human resumes or authorizes a new task; never close a newly reopened monitor because an old task already finished. Human-operated browser/upload or human-courier handoff is an explicit fallback, not the silent default. If automatic wakeup is unavailable, say so during setup and resolve it with the human; do not label a sleeping loop automatic. See [MANUAL.md](references/MANUAL.md).
 
 ## Candidate Markdown CLI bridge — prepare only
 

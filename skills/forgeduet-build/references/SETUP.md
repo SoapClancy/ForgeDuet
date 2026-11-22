@@ -27,6 +27,7 @@ Complete before starting the loop. Ask missing questions together, early. Existi
 | Test tiers and required human/device gates | |
 | P3 deferral policy | |
 | Active run or preparation only (do not start monitors during preparation) | |
+| Selected transport for this run and human selection source (reuse existing file/queue/native role; CLI only if explicitly selected) | |
 | Both local detectors (no idle model calls) and wakeup bridges: verified background completion / reviewed CLI relay | |
 | If unavailable: specific limitation and explicitly chosen fallback; consent for recurring AI-timer usage if selected | |
 | AI-timer fallback only: first-operation scan, authorized compact chat/session arrangement, chosen interval | |

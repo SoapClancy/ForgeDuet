@@ -2,6 +2,15 @@
 
 Automatic two-way handoff is the default **once the human starts a paired project run**. Preparing/installing skills is not a request to start a project monitor. Preserve an explicit “do not start yet.” Start each role once; subsequent delivery → review → repair → acceptance transitions must not require a human courier. The human still decides scope, permissions and genuinely human gates.
 
+## Resolve the peer before transport or authentication checks
+
+1. Read the human-selected coordination root and current task. Inspect both `deliveries/` and `reviews/`, completion markers, `updates.log`, role-private cursors and watcher records, including ignored directories. Look for current role kickoffs and unacknowledged completed reports before declaring that no peer is available.
+2. Reconcile the root both peers actually receive. If a peer was watching a parent root, do not assume a newly created nested root is watched too. Resolve a root mismatch through ForgeDuet records before starting a competing run or detector. Preserve handled hashes, owner boundaries and stopped state.
+3. Verify the selected existing file/queue/native notification path. A native Claude Code peer is separate from `claude -p`: missing or logged-out CLI credentials do not show that the native peer is absent. Do not request CLI login, run CLI preflight or launch another paid peer as a fallback merely because the CLI is available. A CLI route requires explicit selection for this run.
+4. Keep all peer handoff inside ForgeDuet. Do not use computer-use, native-app or browser automation to inspect, open, focus, type into or sign in to the other AI client, including for a proposed status check or wake-up. Repair the selected local path or publish a transport notice when warranted; keep prepared delivery files intact. An explicitly selected manual browser fallback is human-operated.
+
+This boundary concerns the peer AI client. Product UI testing is a separate task permission and must also honor any human no-UI restriction. A skill update starts no monitor, does not reopen completed runs and does not hot-reload an already-running peer.
+
 ## Check locally before waking a model
 
 The default is **zero model calls during idle polling**, for both roles. A local process checks filenames, bytes/SHA-256, completion markers and durable acknowledgements every **60 seconds** unless the human chooses another interval. Neither a basic model nor the substantive build/review model is needed for this decision. Do not wake an AI chat every interval just to ask it to run the check. Silence in the chat does not make an AI wakeup free.
@@ -14,7 +23,7 @@ Only pending input or a transport problem needing attention crosses into the mod
 | Candidate Codex existing-chat queue — configure only after its real-test gates | `queue_bridge.py watch` owns the reviewer cursor, queues one event into an authorized existing chat and waits for a bound review + reviewer ack | Idle checks are local. One underlying idle-chat smoke exists; adapter synthetic tests do not prove busy/archive/sleep behavior. See [QUEUE_BRIDGE.md](QUEUE_BRIDGE.md). |
 | Reviewed CLI relay — alternative when configured | Start both `relay.py watch` processes with trusted human-configured adapters | Idle checks are local; only a claimed task starts the configured CLI/model. Example adapters still need an authorized real-provider smoke test. |
 | Native AI scheduler, e.g. Codex App heartbeat — explicit fallback only | A recurring AI task after the human explicitly chooses its disclosed recurring model usage | Wakes a model before it can inspect files; even unchanged scans can consume quota. This is not the default local check. Use supported scheduling tools, not invented configuration. |
-| Browser/upload or no wakeup capability | Explicitly agreed manual fallback | State the limitation early. Do not call this an automatic loop. See [MANUAL.md](MANUAL.md). |
+| Human-operated browser/upload or no wakeup capability | Explicitly agreed manual fallback; the agent does not control the peer UI | State the limitation early. Do not call this an automatic loop. See [MANUAL.md](MANUAL.md). |
 
 Build monitors `reviews/`; review monitors `deliveries/`. Record each role's local detector, actual wakeup mechanism/ID or PID, interval, cursor/baseline, last verification, usage limits and restart procedure in a role-owned watcher record. Use `templates/WATCHER.md` in this package or `references/WATCHER.md` in an installed skill. Do not infer the other watcher is alive from your own setup. Verify with a harmless synthetic event in a disposable mailbox; distinguish testing script exit from testing real client wakeup. Never present probes as product candidates or approvals.
 

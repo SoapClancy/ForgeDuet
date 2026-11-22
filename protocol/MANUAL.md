@@ -2,6 +2,8 @@
 
 Two role chats and Markdown records are enough; a custom relay is not required. **A user-started local run defaults to automatic two-way handoff every 60 seconds**, with local code checking for pending reports before any model call. Use verified client background completion or a configured CLI relay; a native AI timer is an explicitly chosen fallback that consumes usage even without changes. Installing/editing skills alone is preparation: do not start monitoring a project until the user starts that run. 中文步骤在下面；报告语言由用户指定。
 
+Peer coordination uses ForgeDuet records; it does not authorize driving another AI client's application, chat or sign-in UI. Resolve the existing peer/root first using [AUTO_HANDOFF.md](AUTO_HANDOFF.md). CLI dispatch is a separately selected mode; manual browser transfer is performed by the human.
+
 ## One complete loop
 
 1. **Agree the task.** Fill the essential choices in `SETUP.md`: objective, acceptance criteria, both requested models/strengths and verification levels, report language, access, optional budgets, and merge/push/device grants. Save the task and project rules. A small task can use one short rules file; do not fill an entire document tree with placeholders.
@@ -32,6 +34,8 @@ For shared local files, [WORKSPACES.md](WORKSPACES.md) shows the recommended coo
 > 开始这一轮 ForgeDuet review：[项目/任务和规则路径]。由本地代码监控 deliveries/，默认每分钟一次，无待处理输入不调用模型；验证有事件才唤醒工作模型的方式。完整交付到达后核对 SHA，隔离审查和独立测试，原子发布报告并继续等修复/接受。不需要我传话；保持现有模型设置和授权边界。
 
 ## Explicit manual/browser fallback / 明确的手动或网页后备模式
+
+The human performs any peer-browser navigation, upload, download or sign-in. The agents prepare and consume ForgeDuet artifacts; they do not automate the other AI client UI.
 
 Use this only when the user chooses it or actual automatic wakeup/shared files are unavailable and that limitation is agreed. Export the candidate using [SNAPSHOTS.md](SNAPSHOTS.md); supply its full SHA, ZIP SHA-256, manifest, rules and delivery. A browser reviewer reports available hash/test capabilities and uploads its findings/regressions for build. The human is then explicitly the courier. This is a valid bounded workflow, **not** an automatic one. No local CLI or reviewer Git is required in this fallback.
 
