@@ -189,13 +189,14 @@ class QueueBridge:
         return match[1]
 
     def dispatch(self, state, event):
-        self.validate()
         line(event["path"])  # Header binding must not accept multiline peer filenames.
-        require(scan(self.root, "review").get(event["path"]) == event["sha256"], "Input changed before dispatch")
-        require(not self.cursor.load()["paused"], "Cursor paused before dispatch")
         key = self.event_key(event)
         require(key not in state["attempts"], "This input already has a queue attempt; never automatically resend")
+        # The help check can take up to queue_timeout_seconds, so every guard below runs after it.
         self.preflight()
+        self.validate()
+        require(scan(self.root, "review").get(event["path"]) == event["sha256"], "Input changed before dispatch")
+        require(not self.cursor.load()["paused"], "Cursor paused before dispatch")
         run = self.runtime / ("dispatch-" + key)
         a = {"key": key, "event": event, "status": "dispatching", "started_at": stamp(),
              "run_dir": str(run), "usage": "unknown; queue receipt is not a token counter"}
@@ -257,6 +258,10 @@ class QueueBridge:
         if not quota_ready(q):
             return {"status":"waiting_quota", "key":active["key"], "resumes_at":q["resets_at"]+2}
         self.preflight()
+        self.validate()
+        require(scan(self.root, "review").get(active["event"]["path"]) == active["event"]["sha256"],
+                "Input changed before quota continuation")
+        require(not self.cursor.load()["paused"], "Cursor paused before quota continuation")
         run=self.runtime/("resume-"+active["key"]+"-"+str(len(active.get("quota_resumed", []))+1))
         active["status"]="dispatching"
         active.setdefault("quota_resumed", []).append(q["receipt_id"])

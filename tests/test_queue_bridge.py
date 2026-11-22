@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -144,6 +145,35 @@ class QueueTests(unittest.TestCase):
                     self.assertTrue(c.cursor.load()['paused'])
                     self.assertEqual(len(list((c.root/'reviews').glob('queue-transport-*.md'))), 1)
                 finally: c.doCleanups()
+
+    def interrupt_help(self, action):
+        # FD-QC-001 (reviewer regression, adopted): a stop or input change while `queue --help`
+        # runs must not lead to a dispatch attempt or a queue child.
+        e = self.delivery(); self.mode('help-wait'); out = []
+        def work():
+            try: out.append(self.bridge.watch(once=True))
+            except BaseException as exc: out.append({'exception': str(exc)})
+        worker = threading.Thread(target=work); worker.start()
+        try:
+            until = time.monotonic() + 5
+            while not (self.fake_dir/'help-started').exists() and time.monotonic() < until: time.sleep(0.01)
+            self.assertTrue((self.fake_dir/'help-started').exists())
+            action(e)
+        finally:
+            (self.fake_dir/'help-release').write_text('continue'); worker.join(5)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(self.calls(), [])
+        self.assertEqual(list(self.runtime.glob('dispatch-*')), [])
+        self.assertEqual(self.journal()['attempts'], {})
+        return out[0]
+
+    def test_pause_while_help_runs_must_not_launch_queue(self):
+        self.interrupt_help(lambda e: self.cursor.control(True, 'human stopped during help'))
+        self.assertTrue(self.cursor.load()['paused'])
+
+    def test_input_changed_while_help_runs_must_not_launch_queue(self):
+        r = self.interrupt_help(lambda e: (self.root/e['path']).write_text('new bytes\n交付完成。\n'))
+        self.assertIn('changed before dispatch', r.get('exception', ''))
 
     def test_review_without_expected_model_self_report_is_handled_but_pauses(self):
         for owner in ('review', 'review / gpt-5.9 low / synthetic'):

@@ -39,6 +39,10 @@ if args[:1] == ['queue'] and ('--help' in args or '-h' in args):
         out.write(json.dumps(args) + '\n')
     if mode == 'help-fail':
         sys.exit(1)
+    if mode == 'help-wait':
+        (area / 'help-started').write_text('ready')
+        while not (area / 'help-release').exists():
+            time.sleep(0.01)
     print(HELP.replace('--message', '--text') if mode == 'help-old' else HELP)
     sys.exit(0)
 
