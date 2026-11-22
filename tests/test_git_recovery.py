@@ -182,10 +182,11 @@ class RecoveryTests(unittest.TestCase):
         submitted=q.bridge.watch(once=True);self.assertEqual(submitted['status'],'submitted')
         attempt=q.active();event=attempt['event'];self.assertTrue(event['path'].startswith('deliveries/git-transport-'))
         name='git-transport-response-'+attempt['key']+'.md'
-        w=handoff.Writer(q.root);token=w.acquire('review','local transport handling only')
+        owner='review / gpt-6.1-sol xhigh / fixture'  # queue adapter requires the model self-report in the header
+        w=handoff.Writer(q.root);token=w.acquire(owner,'local transport handling only')
         try:
-            w.publish('review',token,'reviews/'+name,'record_type: transport_notice_response\ntransport_scope: local\nQueue-Event-ID: '+attempt['key']+'\nInput-Path: '+event['path']+'\nInput-SHA256: '+event['sha256']+'\n\nLocal gate recorded; no source review or approval.')
-        finally:w.release('review',token)
+            w.publish(owner,token,'reviews/'+name,'record_type: transport_notice_response\ntransport_scope: local\nQueue-Event-ID: '+attempt['key']+'\nInput-Path: '+event['path']+'\nInput-SHA256: '+event['sha256']+'\n\nLocal gate recorded; no source review or approval.')
+        finally:w.release(owner,token)
         q.cursor.ack(event['path'],event['sha256'])
         self.assertEqual(q.bridge.watch(once=True)['status'],'handled')
         self.assertEqual(len(q.calls()),1)

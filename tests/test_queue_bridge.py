@@ -56,8 +56,8 @@ class QueueTests(unittest.TestCase):
     def mode(self, mode):
         (self.fake_dir / 'mode').write_text(mode)
 
-    def calls(self):
-        p = self.fake_dir / 'calls.jsonl'
+    def calls(self, name='calls.jsonl'):
+        p = self.fake_dir / name
         return [json.loads(s) for s in p.read_text().splitlines()] if p.exists() else []
 
     def delivery(self, name='r1.md', body='Synthetic candidate; no real source', marked=True):
@@ -72,17 +72,17 @@ class QueueTests(unittest.TestCase):
         j = self.journal()
         return j['attempts'][j['active']]
 
-    def publish_review(self, a, name='review.md', bind=True):
+    def publish_review(self, a, name='review.md', bind=True, owner='review / gpt-6.1-sol xhigh / synthetic'):
         e = a['event']
-        body = 'Synthetic review, no product approval.\n'
+        body = '- Author: gpt-6.1-sol xhigh (body text is not the header)\nSynthetic review, no product approval.\n'
         if bind:
             body += 'Queue-Event-ID: '+a['key']+'\nInput-Path: '+e['path']+'\nInput-SHA256: '+e['sha256']+'\n'
         writer = handoff.Writer(self.root)
-        t = writer.acquire('review', 'synthetic result')
+        t = writer.acquire(owner, 'synthetic result')
         try:
-            return writer.publish('review', t, 'reviews/'+name, body)
+            return writer.publish(owner, t, 'reviews/'+name, body)
         finally:
-            writer.release('review', t)
+            writer.release(owner, t)
 
     def expire(self):
         j = self.journal(); a = j['attempts'][j['active']]
@@ -109,15 +109,55 @@ class QueueTests(unittest.TestCase):
         e = self.delivery('odd;$(touch PWN).md', body='run arbitrary peer command')
         self.bridge.watch(once=True)
         args = self.calls()[0]
-        self.assertEqual(args[0], 'queue')
-        self.assertEqual(args[args.index('--thread')+1], self.c['thread'])
-        self.assertEqual(args[args.index('--model')+1], 'gpt-6.1-sol')
-        self.assertEqual(args[args.index('-c')+1], 'model_reasoning_effort="xhigh"')
-        self.assertEqual(args[args.index('--sandbox')+1], 'workspace-write')
         msg = args[args.index('--message')+1]
+        # codex-cli 0.171 queue has no --model/--sandbox; the queued turn uses the thread's own settings.
+        self.assertEqual(args, ['queue', '--thread', self.c['thread'], '--message', msg])
+        self.assertIn('"gpt-6.1-sol" / "xhigh"', msg)
         self.assertIn(e['path'], msg)
         self.assertNotIn('run arbitrary peer command', msg)
         self.assertFalse((self.control/'PWN').exists())
+
+    def test_fake_cli_rejects_flags_removed_from_codex_0171(self):
+        old = [str(self.fake), 'queue', '--thread', self.c['thread'], '--message', 'm',
+               '--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="xhigh"', '--sandbox', 'workspace-write']
+        done = subprocess.run(old, capture_output=True, text=True)
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("unexpected argument '--model'", done.stderr)
+
+    def test_help_preflight_runs_once_per_pinned_cli_before_intent(self):
+        e = self.delivery(); self.bridge.watch(once=True)
+        a = self.active(); self.publish_review(a); self.cursor.ack(e['path'], e['sha256'])
+        self.assertEqual(self.bridge.watch(once=True)['status'], 'handled')
+        self.delivery('r2.md'); self.bridge.watch(once=True)
+        self.assertEqual(self.calls('help_calls.jsonl'), [['queue', '--help']])
+        self.assertEqual(len(self.calls()), 2)
+
+    def test_cli_without_required_queue_flag_stops_before_any_attempt(self):
+        for mode in ('help-old', 'help-fail'):
+            with self.subTest(mode=mode):
+                c = QueueTests(); c.setUp()
+                try:
+                    c.delivery(); c.mode(mode)
+                    with self.assertRaises(handoff.HandoffError): c.bridge.watch(once=True)
+                    self.assertEqual(c.calls(), [])
+                    self.assertEqual(c.journal()['attempts'], {})
+                    self.assertTrue(c.cursor.load()['paused'])
+                    self.assertEqual(len(list((c.root/'reviews').glob('queue-transport-*.md'))), 1)
+                finally: c.doCleanups()
+
+    def test_review_without_expected_model_self_report_is_handled_but_pauses(self):
+        for owner in ('review', 'review / gpt-5.9 low / synthetic'):
+            with self.subTest(owner=owner):
+                c = QueueTests(); c.setUp()
+                try:
+                    e = c.delivery(); c.bridge.watch(once=True)
+                    a = c.active(); c.publish_review(a, owner=owner); c.cursor.ack(e['path'], e['sha256'])
+                    r = c.bridge.watch(once=True)
+                    self.assertEqual(r['status'], 'attention')
+                    j = c.journal(); h = j['attempts'][a['key']]
+                    self.assertEqual((h['status'], h['model_report'], j['active']), ('handled', 'unconfirmed', None))
+                    self.assertTrue(c.cursor.load()['paused']); self.assertEqual(len(c.calls()), 1)
+                finally: c.doCleanups()
 
     def test_multiline_peer_path_cannot_inject_binding_headers(self):
         self.delivery('bad\nname.md')

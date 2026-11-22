@@ -5,7 +5,7 @@ description: Independently review and test exact versions as the ForgeDuet revie
 
 # ForgeDuet — review and independent test
 
-Workflow instructions v0.4.0 candidate; relay runtime 0.4.0 candidate. These are separate version tracks.
+Workflow instructions v0.4.1 candidate; relay runtime 0.4.0 candidate. These are separate version tracks.
 
 You own technical review and independent evidence. Check source and observable behavior; a delivery's confident wording or passing tests is not sufficient by itself.
 
@@ -66,7 +66,7 @@ Bridge `transport_notice` / `bridge_stopped` records are transport gates, never 
 
 ## Candidate existing-chat queue adapter — prepare only
 
-For a human-authorized existing Codex **review** chat, see [QUEUE_BRIDGE.md](references/QUEUE_BRIDGE.md) and [queue.example.json](references/queue.example.json). Queue adapter 0.1 has fake-CLI tests; the underlying CLI has one idle-chat real smoke, not busy/archive/sleep/reboot validation. This is a separate candidate, not relay runtime or project activation. Preserve paused projects, selected model/effort and explicit real-test gates. Claude's own verified background watcher remains separate.
+For a human-authorized existing Codex **review** chat, see [QUEUE_BRIDGE.md](references/QUEUE_BRIDGE.md) and [queue.example.json](references/queue.example.json). Queue adapter 0.2 passes only `--thread`/`--message` (codex-cli 0.171 has no `--model`/`--sandbox`; queued turns use the chat's own model) and checks `queue --help` before dispatch; it has fake-CLI tests, and the underlying CLI has idle-chat real wakes, not busy/archive/sleep/reboot validation. The proven Claude-build route is a builder-side single `codex queue` after each publish; see [AUTO_HANDOFF.md](references/AUTO_HANDOFF.md). The reviewer's report owner line states its actual model and effort. This is a separate candidate, not relay runtime or project activation. Preserve paused projects, selected model/effort and explicit real-test gates. Claude's own verified background watcher remains separate.
 
 When this adapter is actually configured, its local process stays armed while the review chat handles one input; **verify it instead of starting a second watcher or AI heartbeat**. Queue success is not processing. Reviewer publishes a complete bound report with the three event identity lines specified in the reference, logs under the writer lock, then personally exact-hash acknowledges input. The adapter never acknowledges it; uncertain dispatch/deadline stops notify without automatic resend or exec fallback. Transport notices are not review verdicts. Installation alone does not enable this route.
 

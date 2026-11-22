@@ -61,7 +61,7 @@ MIT 许可证。真实崩溃日志、截图、设备信息等默认不进 Git；
 
 ### 候选：唤醒原审查聊天
 
-`scripts/queue_bridge.py` 在本地检查交付文件，有新交付才向已获授权的 Codex 审查聊天排队。空闲检查不调用模型；排队不等于审完，仍由审查方发布报告后确认处理。见 [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md)。适配器 0.1 只测过假接口，底层命令已有一次空闲聊天实测；忙碌、归档、睡眠、重启及正式无人值守仍未验证。本次不会启动任何项目监控。
+`scripts/queue_bridge.py` 在本地检查交付文件，有新交付才向已获授权的 Codex 审查聊天排队。空闲检查不调用模型；排队不等于审完，仍由审查方发布报告后确认处理。见 [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md)。适配器 0.2 已适配 codex-cli 0.171：只传 `--thread` 和 `--message`，审查聊天沿用它自己的模型；在假接口上测过，底层命令已有多次空闲聊天的真实唤醒。Claude 担任构建方时，已验证的路线是构建方每发布一份交付就执行一次 `codex queue`，见 [AUTO_HANDOFF.md](protocol/AUTO_HANDOFF.md)。忙碌、归档、睡眠、重启及正式无人值守仍未验证。本次不会启动任何项目监控。
 
 
 ## 当前安装与试用状态 — 2026-10-12

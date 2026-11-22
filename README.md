@@ -89,7 +89,7 @@ MIT licensed. The package does not initialize your Git repository, configure a r
 
 ### Candidate existing-chat queue
 
-`scripts/queue_bridge.py` watches locally and queues a new delivery into an authorized existing Codex review chat. Idle checks invoke no model; queue success is not a completed review. See [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md). Candidate 0.1 is fake-CLI tested; the underlying CLI has one real idle-chat smoke. Busy/archive/sleep/reboot and actual unattended deployment remain unverified. No project monitor is started by this update.
+`scripts/queue_bridge.py` watches locally and queues a new delivery into an authorized existing Codex review chat. Idle checks invoke no model; queue success is not a completed review. See [QUEUE_BRIDGE.md](protocol/QUEUE_BRIDGE.md). Candidate 0.2 matches codex-cli 0.171 (`queue --thread --message` only; the chat keeps its own model) and is fake-CLI tested; the underlying CLI has real idle-chat wakes. With a Claude Code builder, the verified route is one builder-side `codex queue` per delivery; see [AUTO_HANDOFF.md](protocol/AUTO_HANDOFF.md). Busy/archive/sleep/reboot and actual unattended deployment remain unverified. No project monitor is started by this update.
 
 
 ## Current installation and trial status — 2026-10-12
